@@ -1,0 +1,4 @@
+#!/bin/bash
+
+mkdir -p tmp
+env PENGUINTRACE_TMPDIR="tmp/" ./build/bin/penguintrace "$@"

@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# ----------------------------------------------------------------
+# Copyright (C) 2019 Alex Beharrell
+#
+# This file is part of penguinTrace.
+#
+# penguinTrace is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or any later version.
+#
+# penguinTrace is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with penguinTrace. If not, see
+# <https://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------
+#
+# Generate static files for web server
+
+if [ "$1" == "IMPL" ]; then
+  IMPL=1
+  HDR=0
+fi
+if [ "$1" == "HDR" ]; then
+  IMPL=0
+  HDR=1
+fi
+
+if [ "$HDR" == 1 ]; then
+  echo "#ifndef COMMON_STATIC_FILES_H_"
+  echo "#define COMMON_STATIC_FILES_H_"
+  echo ""
+  echo "#include <map>"
+  echo "#include <vector>"
+  echo "#include \"../common/Common.h\""
+fi
+
+if [ "$IMPL" == 1 ]; then
+  echo "#include \"static_files.h\""
+fi
+
+
+echo "namespace penguinTrace"
+echo "{"
+echo "namespace files"
+echo "{"
+
+if [ "$HDR" == 1 ]; then
+  echo "  typedef std::pair<unsigned char *, int> FileInfo;"
+fi
+
+FILEMAP=""
+FILETYPEMAP=""
+FILEENUM=""
+FILELIST=""
+
+function process_dir()
+{
+  prefix=$1
+  for n in ${prefix}/*; do
+    if [ -d $n ]; then
+      process_dir $n
+    elif [ -f $n ]; then
+      f=`echo $n | sed 's/\.\///g' | sed 's/\//\/.\//g'`
+      fl=`echo $f | sed 's/\./_/g' | sed 's/\//_/g'`
+      fl2=`echo $f | sed 's/\/\.\//___/g'`
+      if [ "$IMPL" == 1 ]; then
+        xxd -i $f
+      fi
+      if [ "$HDR" == 1 ]; then
+        echo "  extern unsigned int ${fl}_len;"
+        echo "  extern unsigned char $fl[];"
+      fi
+      ftype=`file -bi $f`
+      if [ "${f##*.}" == "css" ]; then
+        # CSS mimetype not always picked up
+        ftype=`echo $ftype | sed 's/text\/plain/text\/css/'`
+      fi
+      if [ "${f##*.}" == "html" ]; then
+        # Code examples can mean mimetype is wrong for HTML
+        ftype=`echo $ftype | sed 's/text\/[a-zA-Z\-]\+/text\/html/'`
+      fi
+      FILEMAP+="{\"FL_${fl^^}\", FileInfo($fl, ${fl}_len)},"
+      FILETYPEMAP+="{\"FL_${fl^^}\", \"$ftype\"},"
+      FILELIST+="{\"${fl2}\", \"FL_${fl^^}\"},"
+    fi
+  done
+}
+
+cd static
+
+process_dir '.'
+
+ALL_FILEMAP=`echo $FILEMAP | sed 's/,$//'`
+ALL_FILETYPEMAP=`echo $FILETYPEMAP | sed 's/,$//'`
+ALL_FILELIST=`echo $FILELIST | sed 's/,$//'`
+
+if [ "$HDR" == 1 ]; then
+  echo "  typedef std::map<Filename, const FileInfo > FileMap;"
+  echo "  typedef std::map<Filename, const char * > FileTypeMap;"
+  echo "  typedef std::pair<std::string, Filename> PathInfo;"
+  echo "  extern FileMap files;"
+  echo "  extern FileTypeMap fileTypes;"
+  echo "  extern std::vector<PathInfo> filelist;"
+fi
+if [ "$IMPL" == 1 ]; then
+  echo "  FileMap files = {$ALL_FILEMAP};"
+  echo "  FileTypeMap fileTypes = {$ALL_FILETYPEMAP};"
+  echo "  std::vector<PathInfo> filelist = {$ALL_FILELIST};"
+fi
+
+echo "}"
+echo "}"
+
+if [ "$HDR" == 1 ]; then
+  echo "#endif /* COMMON_STATIC_FILES_H_ */"
+fi

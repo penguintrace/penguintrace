@@ -1,0 +1,124 @@
+<!--
+----------------------------------------------------------------
+ Copyright (C) 2019 Alex Beharrell
+
+ This file is part of penguinTrace.
+
+ penguinTrace is free software: you can redistribute it and/or
+ modify it under the terms of the GNU Affero General Public
+ License as published by the Free Software Foundation, either
+ version 3 of the License, or any later version.
+
+ penguinTrace is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public
+ License along with penguinTrace. If not, see
+ <https://www.gnu.org/licenses/>.
+----------------------------------------------------------------
+
+penguinTrace UI
+-->
+<!doctype html>
+<html>
+<head>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple_touch_icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon_32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon_16x16.png">
+  <link rel="mask-icon" href="/safari_pinned_tab.svg" color="#2899c0">
+  <meta name="msapplication-TileColor" content="#603cba">
+  <meta name="theme-color" content="#2899c0" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <link rel="stylesheet" href="css/penguintrace.css" />
+  <link rel="stylesheet" href="css/codemirror.css" />
+
+  <script src="js/lib/jquery_3.3.1.min.js"></script>
+
+  <script src="js/penguintrace/penguintrace.js"></script>
+  <script src="js/penguintrace/code_examples.js"></script>
+
+  <script src="js/lib/codemirror.js"></script>
+  <script src="js/lib/gas.js"></script>
+  <script src="js/lib/clike.js"></script>
+
+  <script type="text/javascript">
+
+  window.onload = function ()
+  {
+    ptrace.startApp();
+
+    ptrace.loadCode(codeExamples['c-testing']);
+  }
+
+  </script>
+  <title>penguinTrace</title>
+</head>
+<body>
+<div id="header-container">
+  <div id="header">
+    <img style="height: 50px" src="img/logo.svg" alt="penguinTrace" title="penguinTrace" />
+  </div>
+</div>
+<div id="controls-container">
+  <div id="controls">
+    <img id="play-button" src="img/play.svg" alt="Compile" title="Compile" />
+    <img id="fwd-skip-button" class="disabled" src="img/forward_skip.svg" alt="Step by Line" title="Step by Line" />
+    <img id="fwd-button" class="disabled" src="img/forward.svg" alt="Continue" title="Continue" />
+    <img id="stop-button" class="disabled" src="img/stop.svg" alt="Stop" title="Stop" />
+    <img id="loop-button" class="disabled" src="img/loop.svg" alt="Loop" title="Loop" />
+    <img id="more-button" src="img/more.svg" alt="More Details" title="More Details" />
+    <img id="menu-button" src="img/settings.svg" alt="Menu" title="Menu" />
+    <img id="download-button" class="disabled" src="img/expand.svg" alt="Download your program" title="Download your program" />
+  </div>
+</div>
+<div id="code-wrapper">
+<div id="main-code-wrapper">
+  <textarea id="source-code">
+  </textarea>
+</div>
+<div id="asm-code-wrapper">
+  <textarea id="compiled-code">  Write some code in the left pane and
+    then compile (&#x25b6;) to step through</textarea>
+</div>
+</div>
+<div id="console">
+    <span id="console-history-clear" title="Clear History">&#x1F5D9;</span>
+  <div id="console-history">
+    <ul>
+    </ul>
+  </div>
+  <div id="console-input">
+    <div id="console-input-prompt">$</div>
+    <input id="console-input-text" name="console-input-text" placeholder="Input..." />
+  </div>
+</div>
+<div id="menu-background">
+  <div id="menu">
+    <span id="menu-close" title="Close Menu">&#x1F5D9;</span>
+    <div id="menu-title">menu</div>
+    <div class="menu-section">
+      <div class="menu-header">language</div>
+      <ul id="menu-lang"></ul>
+    </div>
+    <div class="menu-section">
+      <div class="menu-header">example code</div>
+      <ul id="menu-code"></ul>
+    </div>
+    <div class="menu-section">
+      <div class="menu-header">command line arguments</div>
+      <input id="menu-input-text" name="menu-input-text" placeholder="Arguments..." />
+    </div>
+    <div class="menu-section">
+      <div class="menu-header">upload binary</div>
+      <input type="file" name="menu-upload-file" id="menu-upload-file">
+    </div>
+    <div class="menu-section">
+      <div class="menu-header"><a href="/source.tar.gz">download penguinTrace source</a></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

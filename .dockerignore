@@ -1,0 +1,10 @@
+# Ignore build/git
+build
+.git
+# Ignore generated files
+dwarf/definitions.h
+server/static_files.cpp
+server/static_files.h
+debug/syscall.h
+static/source.tar
+static/source.tar.gz

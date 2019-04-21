@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import sys
+import subprocess
+import re
+
+p = subprocess.Popen(['gcc', '-dN', '-E', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+out, err = p.communicate('#include<sys/syscall.h>')
+
+if p.returncode != 0:
+  print("Failed to get system call definitions from <sys/syscall.h>")
+
+DEF_RE = re.compile(r'#define\s+SYS_([a-zA-Z_0-9-]+)')
+
+syscalls = []
+
+for l in out.split('\n'):
+  m = DEF_RE.match(l)
+  if m:
+    syscalls.append(m.group(1))
+
+print("""
+#ifndef _SYSCALLS_H_
+#define _SYSCALLS_H_
+
+#include <sys/syscall.h>
+#include <string>
+
+namespace penguinTrace {
+
+  std::string getSyscallName(uint64_t number)
+  {
+    switch (number)
+    {""")
+
+for s in syscalls:
+  print('      case SYS_{}: return "{}";'.format(s, s))
+
+print("""      default: return "UNKNOWN";
+    }
+  }
+}
+
+#endif
+""")
+

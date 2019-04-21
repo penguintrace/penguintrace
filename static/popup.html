@@ -1,0 +1,208 @@
+<!--
+----------------------------------------------------------------
+ Copyright (C) 2019 Alex Beharrell
+
+ This file is part of penguinTrace.
+
+ penguinTrace is free software: you can redistribute it and/or
+ modify it under the terms of the GNU Affero General Public
+ License as published by the Free Software Foundation, either
+ version 3 of the License, or any later version.
+
+ penguinTrace is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public
+ License along with penguinTrace. If not, see
+ <https://www.gnu.org/licenses/>.
+----------------------------------------------------------------
+
+penguinTrace Extra Information
+-->
+<html>
+  <head>
+    <link rel="stylesheet" href="css/penguintrace.css" />
+    <script src="js/lib/jquery_3.3.1.min.js"></script>
+    <script type="text/javascript">
+      var tabs = ['registers', 'variables', 'memory'];
+
+      function hexHalfword(half)
+      {
+        return ((half & 0xffff) | 0x10000).toString(16).substr(1);
+      }
+
+      function hexString(high, low)
+      {
+        var str = "0x";
+        str += hexHalfword(high >> 16);
+        str += " ";
+        str += hexHalfword(high);
+        str += " ";
+        str += hexHalfword(low >> 16);
+        str += " ";
+        str += hexHalfword(low);
+        return str;
+      }
+
+      function decString(high, low)
+      {
+        if (high == 0)
+        {
+          return low;
+        }
+        else if (high == 0xffffffff)
+        {
+          if (low > 0)
+          {
+            return "-"+low;
+          }
+          else
+          {
+            return low;
+          }
+        }
+        else
+        {
+          return "-";
+        }
+      }
+
+      var prevRegs = new Object();
+
+      function updateRegisters(regs)
+      {
+        $('.reg-changed').removeClass('reg-changed');
+        var tbody = $('#registers-tbody');
+        regs.forEach(function (elem) {
+          var row = "<tr id=\""+elem.name+"\">";
+          row += "<td class=\"first-row\">";
+          row += elem.name;
+          row += "</td><td>";
+          row += hexString(elem.high, elem.low);
+          row += "</td><td>";
+          row += decString(elem.high, elem.low);
+          row += "</td></tr>";
+          var trow = $('#'+elem.name);
+          if (trow.length > 0)
+          {
+            trow.replaceWith(row);
+            if (elem.name in prevRegs)
+            {
+              var pVal = prevRegs[elem.name];
+              if ((elem.high != pVal.high) || (elem.low != pVal.low))
+              {
+                $('#'+elem.name).addClass('reg-changed');
+              }
+            }
+          }
+          else
+          {
+            tbody.append(row);
+          }
+          prevRegs[elem.name] = {high: elem.high, low: elem.low};
+        });
+      }
+
+      function updateVariables(vars)
+      {
+        var tbody = $('#variables-tbody');
+        tbody.html("");
+        vars.forEach(function (elem) {
+          var row = "<tr id=\""+elem.name+"\">";
+          row += "<td class=\"first-row\">";
+          row += elem.name;
+          row += "</td><td>";
+          row += elem.value;
+          row += "</td></tr>";
+          tbody.append(row);
+        });
+      }
+
+      function updateStack(vars)
+      {
+        var tbody = $('#memory-tbody');
+        tbody.html("");
+        for (var i = 0; i < vars.length; i++)
+        {
+          var row = "<tr><td>";
+          row += vars[i];
+          row += "</td></tr>";
+          tbody.append(row);
+        }
+      }
+
+      function doLoad()
+      {
+        tabs.forEach(function (elem) {
+          $('#'+elem+'-button').click(function() {
+            $('.active').removeClass('active');
+            $('#'+elem+'-button').addClass('active');
+            tabs.forEach(function (e) {
+              if (e == elem)
+              {
+                $('#'+e+'-tab').removeClass('hidden');
+              }
+              else
+              {
+                $('#'+e+'-tab').addClass('hidden');
+              }
+            });
+          });
+          console.log(elem);
+        });
+      }
+    </script>
+    <title>penguinTrace</title>
+  </head>
+  <body>
+    <div id="header-container">
+      <div id="header-popup">
+        machine state
+      </div>
+    </div>
+    <div id="controls-container">
+      <ul>
+        <li id="registers-button" class="active first">Registers</li>
+        <li id="variables-button">Variables</li>
+        <li id="memory-button">stack</li>
+      </ul>
+      <div style="clear: both"></div>
+    </div>
+    <div id="content-container">
+      <div id="registers-tab">
+        <table id="registers-table">
+          <thead>
+            <tr>
+              <th class="first-row">Register</th>
+              <th>Hex</th>
+              <th>decimal</th>
+            </tr>
+          </thead>
+          <tbody id="registers-tbody">
+          </tbody>
+        </table>
+      </div>
+      <div id="variables-tab" class="hidden">
+        <table id="variables-table">
+          <thead>
+            <tr>
+              <th class="first-row">Variable</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="variables-tbody">
+          </tbody>
+        </table>
+      </div>
+      <div id="memory-tab" class="hidden">
+        <b>Stack</b><br />
+        <table id="memory-table">
+          <tbody id="memory-tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

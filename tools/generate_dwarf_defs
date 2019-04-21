@@ -1,0 +1,499 @@
+#!/usr/bin/env python
+
+# ----------------------------------------------------------------
+# Copyright (C) 2019 Alex Beharrell
+#
+# This file is part of penguinTrace.
+#
+# penguinTrace is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or any later version.
+#
+# penguinTrace is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with penguinTrace. If not, see
+# <https://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------
+#
+# Generate C++ enums representing DWARF information
+
+from __future__ import print_function
+
+from collections import OrderedDict
+
+DWARF_DEFINITIONS = OrderedDict()
+
+DWARF_DEFINITIONS[('section', 'Section Names', True)] = {
+	"abbrev"  : ".debug_abbrev",
+	"aranges" : ".debug_aranges",
+	"frame"   : ".debug_frame",
+	"eh_frame": ".eh_frame",
+	"info"    : ".debug_info",
+	"line"    : ".debug_line",
+	"loc"     : ".debug_loc",
+	"macinfo" : ".debug_macinfo",
+	"pubnames": ".debug_pubnames",
+	"pubtypes": ".debug_pubtypes",
+	"ranges"  : ".debug_ranges",
+	"str"     : ".debug_str",
+	"types"   : ".debug_types"
+}
+
+DWARF_DEFINITIONS[('lns', 'Standard Opcode', False)] = {
+	"copy"              : 0x01,
+	"advance_pc"        : 0x02,
+	"advance_line"      : 0x03,
+	"set_file"          : 0x04,
+	"set_column"        : 0x05,
+	"negate_stmt"       : 0x06,
+	"set_basic_block"   : 0x07,
+	"const_add_pc"      : 0x08,
+	"fixed_advance_pc"  : 0x09,
+	"set_prologue_end"  : 0x0a,
+	"set_epilogue_begin": 0x0b,
+	"set_isa"           : 0x0c
+}
+
+DWARF_DEFINITIONS[('lne', 'Extended Opcode', False)] = {
+	"end_sequence"     : 0x01,
+	"set_address"      : 0x02,
+	"define_file"      : 0x03,
+	"set_discriminator": 0x04
+}
+
+DWARF_DEFINITIONS[('tag', 'Tag Encodings', False)] = {
+	"array_type"              : 0x01,
+	"class_type"              : 0x02,
+	"entry_point"             : 0x03,
+	"enumeration_type"        : 0x04,
+	"formal_parameter"        : 0x05,
+	"imported_declaration"    : 0x08,
+	"label"                   : 0x0a,
+	"lexical_block"           : 0x0b,
+	"member"                  : 0x0d,
+	"pointer_type"            : 0x0f,
+	"reference_type"          : 0x10,
+	"compile_unit"            : 0x11,
+	"string_type"             : 0x12,
+	"structure_type"          : 0x13,
+	"subroutine_type"         : 0x15,
+	"typedef"                 : 0x16,
+	"union_type"              : 0x17,
+	"unspecified_parameters"  : 0x18,
+	"variant"                 : 0x19,
+	"common_block"            : 0x1a,
+	"common_inclusion"        : 0x1b,
+	"inheritance"             : 0x1c,
+	"inlined_subroutine"      : 0x1d,
+	"module"                  : 0x1e,
+	"ptr_to_member_type"      : 0x1f,
+	"set_type"                : 0x20,
+	"subrange_type"           : 0x21,
+	"with_stmt"               : 0x22,
+	"access_declaration"      : 0x23,
+	"base_type"               : 0x24,
+	"catch_block"             : 0x25,
+	"const_type"              : 0x26,
+	"constant"                : 0x27,
+	"enumerator"              : 0x28,
+	"file_type"               : 0x29,
+	"friend"                  : 0x2a,
+	"namelist"                : 0x2b,
+	"namelist_item"           : 0x2c,
+	"packed_type"             : 0x2d,
+	"subprogram"              : 0x2e,
+	"template_type_parameter" : 0x2f,
+	"template_value_parameter": 0x30,
+	"thrown_type"             : 0x31,
+	"try_block"               : 0x32,
+	"variant_part"            : 0x33,
+	"variable"                : 0x34,
+	"volatile_type"           : 0x35,
+	"dwarf_procedure"         : 0x36,
+	"restrict_type"           : 0x37,
+	"interface_type"          : 0x38,
+	"namespace"               : 0x39,
+	"imported_module"         : 0x3a,
+	"unspecified_type"        : 0x3b,
+	"partial_unit"            : 0x3c,
+	"imported_unit"           : 0x3d,
+	"condition"               : 0x3f,
+	"shared_type"             : 0x40,
+	"type_unit"               : 0x41,
+	"rvalue_reference_type"   : 0x42,
+	"template_alias"          : 0x43,
+	"lo_user"                 : 0x4080,
+	"hi_user"                 : 0xffff
+}
+
+DWARF_DEFINITIONS[('children', 'Entry Has Children', False)] = {
+	"no" : 0x00,
+	"yes": 0x01
+}
+
+DWARF_DEFINITIONS[('at', 'Attribute', False)] = {
+	"sibling"             : 0x01,
+	"location"            : 0x02,
+	"name"                : 0x03,
+	"ordering"            : 0x09,
+	"byte_size"           : 0x0b,
+	"bit_offset"          : 0x0c,
+	"bit_size"            : 0x0d,
+	"stmt_list"           : 0x10,
+	"low_pc"              : 0x11,
+	"high_pc"             : 0x12,
+	"language"            : 0x13,
+	"discr"               : 0x15,
+	"discr_value"         : 0x16,
+	"visibility"          : 0x17,
+	"import"              : 0x18,
+	"string_length"       : 0x19,
+	"common_reference"    : 0x1a,
+	"comp_dir"            : 0x1b,
+	"const_value"         : 0x1c,
+	"containing_type"     : 0x1d,
+	"default_value"       : 0x1e,
+	"inline"              : 0x20,
+	"is_optional"         : 0x21,
+	"lower_bound"         : 0x22,
+	"producer"            : 0x25,
+	"prototyped"          : 0x27,
+	"return_addr"         : 0x2a,
+	"start_scope"         : 0x2c,
+	"bit_stride"          : 0x2e,
+	"upper_bound"         : 0x2f,
+	"abstract_origin"     : 0x31,
+	"accessibility"       : 0x32,
+	"address_class"       : 0x33,
+	"artificial"          : 0x34,
+	"base_types"          : 0x35,
+	"calling_convention"  : 0x36,
+	"count"               : 0x37,
+	"data_member_location": 0x38,
+	"decl_column"         : 0x39,
+	"decl_file"           : 0x3a,
+	"decl_line"           : 0x3b,
+	"declaration"         : 0x3c,
+	"discr_list"          : 0x3d,
+	"encoding"            : 0x3e,
+	"external"            : 0x3f,
+	"frame_base"          : 0x40,
+	"friend"              : 0x41,
+	"identifier_case"     : 0x42,
+	"macro_info"          : 0x43,
+	"namelist_item"       : 0x44,
+	"priority"            : 0x45,
+	"segment"             : 0x46,
+	"specification"       : 0x47,
+	"static_link"         : 0x48,
+	"type"                : 0x49,
+	"use_location"        : 0x4a,
+	"variable_parameter"  : 0x4b,
+	"virtuality"          : 0x4c,
+	"vtable_elem_location": 0x4d,
+	"allocated"           : 0x4e,
+	"associated"          : 0x4f,
+	"data_location"       : 0x50,
+    "byte_stride"         : 0x51,
+	"entry_pc"            : 0x52,
+	"use_UTF8"            : 0x53,
+	"extension"           : 0x54,
+	"ranges"              : 0x55,
+	"trampoline"          : 0x56,
+	"call_column"         : 0x57,
+	"call_file"           : 0x58,
+	"call_line"           : 0x59,
+	"description"         : 0x5a,
+	"binary_scale"        : 0x5b,
+	"decimal_scale"       : 0x5c,
+	"small"               : 0x5d,
+	"decimal_sign"        : 0x5e,
+	"digit_count"         : 0x5f,
+	"picture_string"      : 0x60,
+	"mutable"             : 0x61,
+	"threads_scaled"      : 0x62,
+	"explicit"            : 0x63,
+	"object_pointer"      : 0x64,
+	"endianity"           : 0x65,
+	"elemental"           : 0x66,
+	"pure"                : 0x67,
+	"recursive"           : 0x68,
+	"signature"           : 0x69,
+	"main_subprogram"     : 0x6a,
+	"data_bit_offset"     : 0x6b,
+	"const_expr"          : 0x6c,
+	"enum_class"          : 0x6d,
+	"linkage_name"        : 0x6e,
+	"lo_user"             : 0x2000,
+	"hi_user"             : 0x3fff
+}
+
+DWARF_DEFINITIONS[('form', 'Value Form', False)] = {
+	"addr"        : 0x01,
+	"block2"      : 0x03,
+	"block4"      : 0x04,
+	"data2"       : 0x05,
+	"data4"       : 0x06,
+	"data8"       : 0x07,
+	"string"      : 0x08,
+	"block"       : 0x09,
+	"block1"      : 0x0a,
+	"data1"       : 0x0b,
+	"flag"        : 0x0c,
+	"sdata"       : 0x0d,
+	"strp"        : 0x0e,
+	"udata"       : 0x0f,
+	"ref_addr"    : 0x10,
+	"ref1"        : 0x11,
+	"ref2"        : 0x12,
+	"ref4"        : 0x13,
+	"ref8"        : 0x14,
+	"ref_udata"   : 0x15,
+	"indirect"    : 0x16,
+	"sec_offset"  : 0x17,
+	"exprloc"     : 0x18,
+	"flag_present": 0x19,
+	"reg_sig8"    : 0x20,
+}
+
+DWARF_DEFINITIONS[('op', 'DWARF Operation', False)] = {
+	"addr"        : 0x03,
+	"deref"       : 0x06,
+	"const1u"     : 0x08,
+	"const1s"     : 0x09,
+	"const2u"     : 0x0a,
+	"const2s"     : 0x0b,
+	"const4u"     : 0x0c,
+	"const4s"     : 0x0d,
+	"const8u"     : 0x0e,
+	"const8s"     : 0x0f,
+	"constu"      : 0x10,
+	"consts"      : 0x11,
+	"dup"         : 0x12,
+	"drop"        : 0x13,
+	"over"        : 0x14,
+	"pick"        : 0x15,
+	"swap"        : 0x16,
+	"rot"         : 0x17,
+	"xderef"      : 0x18,
+	"abs"         : 0x19,
+	"and"         : 0x1a,
+	"div"         : 0x1b,
+	"minus"       : 0x1c,
+	"mod"         : 0x1d,
+	"mul"         : 0x1e,
+	"neg"         : 0x1f,
+	"not"         : 0x20,
+	"or"          : 0x21,
+	"plus"        : 0x22,
+	"plus_uconst" : 0x23,
+	"shl"         : 0x24,
+	"shr"         : 0x25,
+	"shra"        : 0x26,
+	"xor"         : 0x27,
+	"skip"        : 0x2f,
+	"bra"         : 0x28,
+	"eq"          : 0x29,
+	"ge"          : 0x2a,
+	"gt"          : 0x2b,
+	"le"          : 0x2c,
+	"lt"          : 0x2d,
+	"ne"          : 0x2e,
+	"regx"        : 0x90,
+	"fbreg"       : 0x91,
+	"bregx"       : 0x92,
+	"piece"       : 0x93,
+	"deref_size"  : 0x94,
+	"xderef_size" : 0x95,
+	"nop"         : 0x96,
+	"push_object_address" : 0x97,
+	"call2"       : 0x98,
+	"call4"       : 0x99,
+	"call_ref"    : 0x9a,
+	"form_tls_address" : 0x9b,
+	"call_frame_cfa" : 0x9c,
+	"bit_piece"   : 0x9d,
+	"implicit_value" : 0x9e,
+	"stack_value" : 0x9f,
+}
+
+for i in range(32):
+	DWARF_DEFINITIONS[('op', 'DWARF Operation', False)]["lit{}".format(i)] = 0x30 + i
+
+for i in range(32):
+	DWARF_DEFINITIONS[('op', 'DWARF Operation', False)]["reg{}".format(i)] = 0x50 + i
+
+for i in range(32):
+	DWARF_DEFINITIONS[('op', 'DWARF Operation', False)]["breg{}".format(i)] = 0x70 + i
+
+DWARF_DEFINITIONS[('eh_pe', 'Pointer Encoding', False)] = {
+	"absptr"  : 0x00,
+	"uleb128" : 0x01,
+	"udata2"  : 0x02,
+	"udata4"  : 0x03,
+	"udata8"  : 0x04,
+	"sleb128" : 0x09,
+	"sdata2"  : 0x0a,
+	"sdata4"  : 0x0b,
+	"sdata8"  : 0x0c,
+	"pcrel"   : 0x10,
+	"textrel" : 0x20,
+	"datarel" : 0x30,
+	"funcrel" : 0x40,
+	"aligned" : 0x50,
+	"omitfmt" : 0x0f,
+	"omitapp" : 0xf0,
+}
+
+DWARF_DEFINITIONS[('cfa', 'Call Frame Instruction', False)] = {
+	"nop"                : 0x00,
+        "set_loc"            : 0x01,
+        "advance_loc1"       : 0x02,
+        "advance_loc2"       : 0x03,
+        "advance_loc4"       : 0x04,
+	"offset_extended"    : 0x05,
+        "restore_extended"   : 0x06,
+	"undefined"          : 0x07,
+	"same_value"         : 0x08,
+	"register"           : 0x09,
+	"remember_state"     : 0x0a,
+	"restore_state"      : 0x0b,
+	"def_cfa"            : 0x0c,
+        "def_cfa_register"   : 0x0d,
+	"def_cfa_offset"     : 0x0e,
+	"def_cfa_expression" : 0x0f,
+	"expression"         : 0x10,
+        "offset_extended_sf" : 0x11,
+	"def_cfa_sf"         : 0x12,
+	"def_cfa_offset_sf"  : 0x13,
+	"val_offset"         : 0x14,
+	"val_offset_sf"      : 0x15,
+	"val_expression"     : 0x16,
+	"GNU_args_size"      : 0x2e,
+	"GNU_negative_offset_extended" : 0x2f
+}
+
+for i in range(64):
+	DWARF_DEFINITIONS[('cfa', 'Call Frame Instruction', False)]["advance_loc_delta{}".format(i)] = 0x40 + i
+
+for i in range(64):
+	DWARF_DEFINITIONS[('cfa', 'Call Frame Instruction', False)]["offset_reg{}".format(i)] = 0x80 + i
+
+for i in range(64):
+	DWARF_DEFINITIONS[('cfa', 'Call Frame Instruction', False)]["restore_reg{}".format(i)] = 0xc0 + i
+
+DWARF_DEFINITIONS[('ate', 'Base Type Attribute Encodings', False)] = {
+	"address"        : 0x01,
+	"boolean"        : 0x02,
+	"complex_float"  : 0x03,
+	"float"          : 0x04,
+	"signed"         : 0x05,
+	"signed_char"    : 0x06,
+	"unsigned"       : 0x07,
+	"unsigned_char"  : 0x08,
+	"imaginary_float": 0x09,
+	"packed_decimal" : 0x0a,
+	"numeric_string" : 0x0b,
+	"edited"         : 0x0c,
+	"signed_fixed"   : 0x0d,
+	"unsigned_fixed" : 0x0e,
+	"decimal_float"  : 0x0f,
+	"UTF"            : 0x10
+}
+
+HDR_TEMPLATE = """
+// Auto-generated DWARF defintions
+
+#ifndef __DWARF_DEFINITIONS_H__
+#define __DWARF_DEFINITIONS_H__
+
+#include <assert.h>
+#include <string>
+
+namespace dwarf_t
+{{
+
+{}
+
+}}
+
+#endif /* __DWARF_DEFINITIONS_H__ */
+"""
+
+TEMPLATE = """
+  // {desc}
+    enum {type_name}_t {{
+      DW_{TYPE_NAME}_NULL = 0x0,
+{enum_names}
+    }};
+
+    inline {type_name}_t convert_{type_name}({val_type_arg} x)
+    {{
+{to_enum}
+      return DW_{TYPE_NAME}_NULL;
+    }}
+
+    inline {val_type_ret} convert_{type_name}({type_name}_t x)
+    {{
+{to_val}
+    }}
+
+    inline std::string {type_name}_str({type_name}_t x)
+    {{
+{to_str}
+      return "DW_{TYPE_NAME}_NULL";
+    }}
+  // End ({desc})
+
+"""
+
+content = ""
+
+for t, defs in DWARF_DEFINITIONS.items():
+	vars = {
+		'type_name'   : t[0],
+		'TYPE_NAME'   : t[0].upper(),
+		'desc'        : t[1],
+		'val_type_arg': 'const std::string&' if t[2] else 'uint64_t',
+		'val_type_ret': 'std::string'  if t[2] else 'uint64_t',
+		'enum_names'  : '',
+		'to_val'      : '',
+		'to_str'      : '',
+		'to_enum'     : ''
+	}
+
+	first = True
+	for k, v in sorted(defs.items(), key=lambda x: x[1]):
+		if not first:
+			vars['enum_names'] += ',\n'
+			vars['to_enum']    += '\n'
+			vars['to_val']     += '\n'
+			vars['to_str']     += '\n'
+		if first:
+			first = False
+		key_name = 'DW_{}_{}'.format(t[0].upper(), k)
+		if t[2]:
+			vars['enum_names'] += '      {}'.format(key_name)
+		else:
+			vars['enum_names'] += '      {} = {}'.format(key_name, hex(v))
+		if t[2]:
+			vars['to_enum'] += '      if (x.compare("{}") == 0) return {};'.format(v, key_name)
+			vars['to_val']  += '      if (x == {}) return "{}";'.format(key_name, v)
+		else:
+			vars['to_enum'] += '      if (x == {}) return {};'.format(hex(v), key_name)
+			vars['to_val']  += '      if (x == {}) return {};'.format(key_name, hex(v))
+		vars['to_str']  += '      if (x == {}) return "{}";'.format(key_name, key_name)
+
+	vars['to_val'] += '\n    '
+	vars['to_val'] += 'assert(0 && "convert_{} should not be called with an invalid value");'.format(vars['type_name'])
+	vars['to_val'] += '\n    '
+	vars['to_val'] += 'return "";' if t[2] else 'return 0;'
+
+	content += TEMPLATE.format(**vars)
+
+print(HDR_TEMPLATE.format(content))

@@ -1,0 +1,15 @@
+# Eclipse project files
+.*
+!.gitignore
+!.dockerignore
+# Default build directory
+build/**
+# Default tmp directory
+tmp/**
+# Auto-generated files
+dwarf/definitions.h
+server/static_files.h
+server/static_files.cpp
+debug/syscall.h
+static/source.tar
+static/source.tar.gz

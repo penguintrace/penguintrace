@@ -1,0 +1,38 @@
+#include <tunables/global>
+
+profile penguintrace-profile {
+  #include <abstractions/base>
+
+  network inet tcp,
+  network netlink raw,
+
+  # Include any temporary directories here
+  /tmp/** rw,
+  /tmp/** ix,
+
+  # Needed for compiling
+  /usr/include/** r,
+
+  # Need fully resolved path for clang/gcc/objcopy
+  /usr/lib/llvm-6.0/bin/clang PUx,
+  /usr/lib/llvm-6.0/bin/clang++ PUx,
+  /usr/bin/gcc PUx,
+  /usr/bin/g++ PUx,
+  /usr/bin/x86_64-linux-gnu-objcopy PUx,
+
+  # Needed to trace child process
+  capability sys_ptrace,
+  ptrace,
+
+  # Needed for pseudo-terminals
+  /dev/ptmx rw,
+  /dev/pts/* rw,
+
+  # Needed for isolation of child processes
+  capability sys_admin,
+  capability sys_chroot,
+  /proc/*/setgroups w,
+  /proc/*/uid_map w,
+  /proc/*/gid_map w,
+  mount,
+}

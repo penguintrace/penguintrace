@@ -1,0 +1,436 @@
+/*
+ * ----------------------------------------------------------------
+ * Copyright (C) 2019 Alex Beharrell
+ *
+ * This file is part of penguinTrace.
+ *
+ * penguinTrace is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public
+ * License as published by the Free Software Foundation, either
+ * version 3 of the License, or any later version.
+ *
+ * penguinTrace is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public
+ * License along with penguinTrace. If not, see
+ * <https://www.gnu.org/licenses/>.
+ * ----------------------------------------------------------------
+ *
+ * penguinTrace CSS Styles
+ */
+
+@font-face {
+  font-family: 'Major Mono Display';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Major Mono Display Regular'), local('MajorMonoDisplay-Regular'), url('/css/major_mono.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html,
+body,
+* {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+
+::-webkit-scrollbar-thumb {
+    background: #8bc5da; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #207b9a; 
+}
+
+#header-container {
+    width: 100%;
+    background-color: #2899c0;
+    padding: 3px 0px;
+}
+
+.CodeMirror {
+    border-bottom: 1px solid #9ba7ab;
+    border-left: 1px solid #9ba7ab;
+    line-height: 1.2;
+}
+
+#asm-code-wrapper .CodeMirror {
+    border-right: 1px solid #9ba7ab;
+}
+
+#header {
+    max-width: 950px;
+    margin: auto;
+    color: #eff1f5;
+    font-size: 22px;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    text-align: left;
+    padding: 5px 10px;
+}
+
+#header-popup {
+    margin: auto;
+    color: #eff1f5;
+    font-size: 16px;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    text-align: left;
+    padding: 5px 10px;
+}
+
+#controls-container {
+    width: 100%;
+    background-color: #eff1f5;
+    border-top: 1px solid #9ba7ab;
+    border-bottom: 1px solid #9ba7ab;
+}
+
+#controls-container ul {
+    list-style: none;
+}
+
+#controls-container li {
+    font-family: "Major Mono Display", monospace;
+    float: left;
+    width: 110px;
+    padding: 3px 10px;
+    border-right: 1px solid #9ba7ab;
+    text-align: center;
+    cursor: pointer;
+    color: #6e7679;
+}
+
+#controls-container li.first {
+    border-left: 1px solid #9ba7ab;
+    margin-left: 25px;
+}
+
+#controls-container li.active {
+    background-color: #9ba7ab;
+    color: #eff1f5;
+}
+
+#controls {
+    max-width: 950px;
+    margin: auto;
+    padding: 5px 10px;
+    text-align: left;
+}
+
+#controls img {
+    margin-right: 4px;
+    vertical-align: bottom;
+    cursor: pointer;
+}
+
+#controls img.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+#code-wrapper {
+    max-width: 950px;
+    margin: 0 auto;
+}
+
+#main-code-wrapper {
+    width: 50%;
+    float: left;
+}
+
+#asm-code-wrapper {
+    width: 50%;
+    float: left;
+}
+
+#content-container {
+    text-align: center;
+    margin: 15px;
+}
+
+#console {
+    max-width: 948px;
+    margin: 0 auto;
+    border-left: 1px solid #9ba7ab;
+    border-right: 1px solid #9ba7ab;
+    border-bottom: 1px solid #9ba7ab;
+    clear: both;
+    font-family: monospace;
+    position: relative;
+}
+
+#console-history {
+    height: 96px;
+    overflow-y: scroll;
+    border-bottom: 1px solid #9ba7ab;
+    background-color: #f8f8f8;
+}
+
+#console-history ul {
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+#console-history li {
+    list-style: none;
+}
+
+#console-history li.stdin {
+    font-weight: bold;
+    color: #9ba7ab;
+}
+
+#console-history li.stderr {
+    font-weight: bold;
+    color: #ff4b4b;
+}
+
+#console-history li::before {
+    content: ">";
+    margin-right: 10px;
+    margin-left: 6px;
+    font-weight: bold;
+    color: #666666;
+}
+
+#console-history li.stderr::before {
+    content: "#";
+}
+
+#console-input {
+    /*margin: 3px 4px 3px 6px;*/
+    position: relative;
+}
+
+#console-input-text, #menu-input-text {
+    font-family: monospace;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#console-input-text {
+    padding: 5px 24px;
+}
+
+#menu-input-text {
+    padding: 5px 10px;
+    border: 1px solid #d8d8d8;
+}
+
+#menu-upload-file {
+    border: 1px solid #d8d8d8;
+    font-family: monospace;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    font-size: 13px;
+    width: 100%;
+    color: #666666;
+}
+
+#console-input-prompt {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-weight: bold;
+    color: #666666;
+}
+
+#console-history-clear, #menu-close {
+    color: #d8d8d8;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 15px;
+    position: absolute;
+}
+
+#console-history-clear {
+    top: 2px;
+    right: 16px;
+}
+
+#menu-close {
+    top: 10px;
+    right: 10px;
+}
+
+#console-history-clear:hover {
+    color: #ff4b4b;
+}
+
+#registers-table, #variables-table {
+    margin: 0px auto;
+    border-collapse: collapse;
+    font-family: "Major Mono Display", monospace;
+    font-size: 14px;
+}
+
+#registers-table td, #registers-table th,
+#variables-table td, #variables-table th,
+#memory-table td {
+    padding: 1px 9px;
+    border: 1px solid #9ba7ab;
+}
+
+#content-container {
+    font-family: monospace;
+}
+
+.first-row {
+    text-align: right;
+}
+
+#registers-table th, #variables-table th {
+    background-color: #eff1f5;
+}
+
+.reg-changed {
+    background-color: #d8ecf3;
+}
+
+.highlight {
+    background-color: #4daccb;
+}
+
+.highlight-widget {
+    margin-left: 4px;
+}
+
+.compile-error {
+    background-color: #ff957d;
+}
+
+.compile-error-ch {
+    background-color: #ff957d;
+}
+
+.breakpoints {
+    width: .8em;
+}
+
+#menu-background {
+    width: 100%;
+    min-height: 100%;
+    background-color: rgba(0,0,0, 0.2);
+    position: absolute;
+    top: 0;
+    z-index: 100;
+    display: none;
+}
+
+#menu {
+    background-color: #ffffff;
+    border: 1px solid #9ba7ab;
+    width: 400px;
+    margin: 50px auto;
+    position: relative;
+    min-height: 100px;
+    padding: 10px;
+}
+
+#menu-title {
+    color: #2899c0;
+    font-size: 22px;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.menu-section {
+    padding: 5px 0px;
+}
+
+.menu-header {
+    color: #2899c0;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.menu-header a {
+    color: #2899c0;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.menu-header a:hover {
+    color: #80cce5;
+}
+
+#menu div ul {
+    margin: 5px 0px;
+}
+
+#menu div ul li {
+    cursor: pointer;
+    font-family: monospace;
+}
+
+#menu div #menu-lang li.selected {
+    font-weight: bold;
+}
+
+#menu div #menu-code li {
+    font-weight: bold;
+}
+
+.code-lang {
+    font-weight: normal;
+}
+
+.code-desc {
+    font-weight: normal;
+    font-size: 90%;
+    padding: 4px;
+}
+
+#error-text {
+    margin: 0px auto;
+    padding: 15px;
+    text-align: center;
+    max-width: 400px;
+}
+
+#error-text h1 {
+    color: #2899c0;
+    font-size: 28px;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+}
+
+#error-text h2 {
+    color: #2899c0;
+    font-size: 22px;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+#error-text h2 a {
+    color: #888888;
+    font-family: "Major Mono Display", monospace;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+#error-text h2 a:hover {
+    color: #80cce5;
+}
