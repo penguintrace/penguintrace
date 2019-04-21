@@ -33,11 +33,19 @@ libcap-dev # For containment
 
 To build penguinTrace outside of a container, clone the repository and run ```make```. The binaries will be placed in ```build/bin``` by default.
 
-To build penguinTrace in Docker, run ```docker build -t penguintrace github.com/penguintrace/penguintrace```. This container can then be run with ```docker run -it -p 8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container.
+To build penguinTrace in Docker, run ```docker build -t penguintrace github.com/penguintrace/penguintrace```.
 
 ### Running
 
 Once penguinTrace is built, running the ```penguintrace``` binary will start the server. Then navigate to [127.0.0.1:8080](http://127.0.0.1:8080) to access the web interface.
+
+If built in a container it can then be run with ```docker run -it -p 8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container. Naviagte to the address printed in the command line:
+
+```
+[INFO]  SERVER: Starting Server...
+[INFO]  SERVER:   IF: lo 127.0.0.1:8080
+[INFO]  SERVER:   IF: eth0 172.17.0.2:8080 # <--- use this address
+```
 
 #### Temporary Files
 
