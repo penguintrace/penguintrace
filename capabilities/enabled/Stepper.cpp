@@ -150,7 +150,7 @@ namespace penguinTrace
 
     for (auto dir : mapDirs)
     {
-      if (dir.first)
+      if (dir.first && fileExists(dir.second))
       {
         std::string from = dir.second;
         std::string to   = tempDir+dir.second;
