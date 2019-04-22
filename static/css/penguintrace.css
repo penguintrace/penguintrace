@@ -382,6 +382,7 @@ body,
 #menu div ul li {
     cursor: pointer;
     font-family: monospace;
+    list-style: none;
 }
 
 #menu div #menu-lang li.selected {

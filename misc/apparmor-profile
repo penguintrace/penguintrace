@@ -4,11 +4,15 @@ profile penguintrace-profile {
   #include <abstractions/base>
 
   network inet tcp,
+  network inet6 stream,
   network netlink raw,
 
   # Include any temporary directories here
   /tmp/** rw,
   /tmp/** ix,
+
+  # Default config for containers
+  /penguintrace.cfg r,
 
   # Needed for compiling
   /usr/include/** r,

@@ -37,15 +37,11 @@ To build penguinTrace in Docker, run ```docker build -t penguintrace github.com/
 
 ### Running
 
-Once penguinTrace is built, running the ```penguintrace``` binary will start the server. Then navigate to [127.0.0.1:8080](http://127.0.0.1:8080) to access the web interface.
+Once penguinTrace is built, running the ```penguintrace``` binary will start the server.
 
-If built in a container it can then be run with ```docker run -it -p 8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container. Naviagte to the address printed in the command line:
+If built in a container it can then be run with ```docker run -it -p 8080:8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container.
 
-```
-[INFO]  SERVER: Starting Server...
-[INFO]  SERVER:   IF: lo 127.0.0.1:8080
-[INFO]  SERVER:   IF: eth0 172.17.0.2:8080 # <--- use this address
-```
+Then navigate to [127.0.0.1:8080](http://127.0.0.1:8080) or [localhost:8080](http://localhost:8080) to access the web interface.
 
 #### Temporary Files
 
@@ -71,7 +67,7 @@ The ```docker_build.sh``` and ```docker_run.sh``` scripts provide an example of 
 
 ### AArch64 / Raspberry Pi
 
-penguinTrace will only run under a 64-bit operating system. The official operating systems provided for the Raspberry Pi are all 32-bit, to run penguinTrace something such as [pi64](https://github.com/bamarni/pi64) is required.
+penguinTrace will only run under a 64-bit operating system. The official operating systems provided for the Raspberry Pi are all 32-bit, to run penguinTrace something such as [pi64](https://github.com/bamarni/pi64) or [Arch Linux Arm](https://archlinuxarm.org/platforms/armv8/broadcom/raspberry-pi-3) is required.
 
 Full instructions for setting up a 64-bit OS on Raspberry Pi TBD.
 

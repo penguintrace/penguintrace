@@ -20,7 +20,7 @@
 //
 // AArch64 specific debugging behaviour
 
-#include "../penguintrace/Stepper.h"
+#include "../debug/Stepper.h"
 
 #include <linux/elf.h>
 
