@@ -39,7 +39,7 @@ To build penguinTrace in Docker, run ```docker build -t penguintrace github.com/
 
 Once penguinTrace is built, running the ```penguintrace``` binary will start the server.
 
-If built in a container it can then be run with ```docker run -it -p 8080:8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container.
+If built in a container it can then be run with ```docker run -it -p 127.0.0.1:8080:8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container.
 
 Then navigate to [127.0.0.1:8080](http://127.0.0.1:8080) or [localhost:8080](http://localhost:8080) to access the web interface.
 
