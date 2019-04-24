@@ -39,6 +39,7 @@ void logThread(penguinTrace::Logger* log, bool* run)
 int main(int argc, char **argv)
 {
   std::string desc = "Step through a binary";
+  penguinTrace::Config::showHelp(penguinTrace::C_AUTO_STEP);
   if (penguinTrace::Config::parse(argc, argv, true, desc))
   {
     bool running = true;
