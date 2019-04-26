@@ -20,6 +20,38 @@
 //
 // penguinTrace Web UI
 
+function hexHalfword(half)
+{
+  return ((half & 0xffff) | 0x10000).toString(16).substr(1);
+}
+
+function hexString(high, low)
+{
+  var str = "0x";
+  str += hexHalfword(high >> 16) + " ";
+  str += hexHalfword(high)       + " ";
+  str += hexHalfword(low >> 16)  + " ";
+  str += hexHalfword(low);
+  return str;
+}
+
+function decString(high, low)
+{
+  if (high == 0)
+  {
+    return low;
+  }
+  else if (high == 0xffffffff)
+  {
+    if (low > 0) return "-"+low;
+    else         return low;
+  }
+  else
+  {
+    return "-";
+  }
+}
+
 var ptrace = new Object();
 
 ptrace.languages = {
@@ -71,6 +103,8 @@ ptrace.state = "INIT";
 ptrace.popupWindow = null;
 ptrace.sourceCode = null;
 ptrace.compiledCode = null;
+ptrace.sourceCodeLine = 0;
+ptrace.compiledCodeLine = 0;
 
 ptrace.sessionName = "";
 
@@ -86,6 +120,7 @@ ptrace.lineNumbers = new Array();
 ptrace.lineDisasm = new Array();
 
 ptrace.lastRegs = new Object();
+ptrace.prevRegs = new Object();
 ptrace.lastVars = new Object();
 ptrace.lastStack = new Array();
 ptrace.pollTries = 0;
@@ -217,24 +252,30 @@ ptrace.updateRegsInPopup = function(regs)
 {
   if (ptrace.popupWindow !== null && !ptrace.popupWindow.closed)
   {
-    ptrace.popupWindow.updateRegisters(regs);
+    ptrace.updateRegisters(ptrace.popupWindow.$, regs);
   }
+  ptrace.updateRegisters($, regs);
+  regs.forEach(function (elem) {
+    ptrace.prevRegs[elem.name] = {high: elem.high, low: elem.low};
+  });
 }
 
 ptrace.updateVarsInPopup = function(vars)
 {
   if (ptrace.popupWindow !== null && !ptrace.popupWindow.closed)
   {
-    ptrace.popupWindow.updateVariables(vars);
+    ptrace.updateVariables(ptrace.popupWindow.$, vars);
   }
+  ptrace.updateVariables($, vars);
 }
 
 ptrace.updateStackInPopup = function(vars)
 {
   if (ptrace.popupWindow !== null && !ptrace.popupWindow.closed)
   {
-    ptrace.popupWindow.updateStack(vars);
+    ptrace.updateStack(ptrace.popupWindow.$, vars);
   }
+  ptrace.updateStack($, vars);
 }
 
 ptrace.createPopup = function()
@@ -261,6 +302,7 @@ ptrace.commonStateUpdate = function(data)
     ptrace.compiledHighlighted.push(lhndl);
 
     ptrace.compiledCode.scrollIntoView({line: line, ch: 0}, ptrace.viewAmount);
+    ptrace.compiledCodeLine = line;
   }
 
   if ("regs" in data)
@@ -297,6 +339,7 @@ ptrace.commonStateUpdate = function(data)
     ptrace.sourceHighlighted.push(lhndl);
 
     ptrace.sourceCode.scrollIntoView({line: line, ch: column}, ptrace.viewAmount);
+    ptrace.sourceCodeLine = line;
   }
   if ("stdout" in data)
   {
@@ -426,6 +469,7 @@ ptrace.pollSessionState = function(retry)
             ptrace.sourceWidgets.push(lw);
 
             ptrace.sourceCode.scrollIntoView({line: line, ch: col}, ptrace.viewAmount);
+            ptrace.sourceCodeLine = line;
           }
           else
           {
@@ -783,6 +827,60 @@ ptrace.setupMenu = function(arch)
   }
 }
 
+ptrace.onDropdown = function(e)
+{
+  var selected = e.target.value;
+  ptrace.onTabClick(selected);
+}
+
+ptrace.onTabClick = function(selected)
+{
+  $('#code-wrapper div.code').removeClass('inactive');
+  $('#code-wrapper div').removeClass('wide-inactive');
+  $('#code-wrapper div.code').addClass('inactive');
+  $('#code-wrapper div#'+selected).removeClass('inactive');
+  $('#controls-tabs-wide li').removeClass('active');
+  if (selected == 'main-code-wrapper')
+  {
+    ptrace.sourceCode.refresh();
+    ptrace.compiledCode.refresh();
+    ptrace.sourceCode.scrollIntoView({line: ptrace.sourceCodeLine, ch: 0}, ptrace.viewAmount);
+    ptrace.compiledCode.scrollIntoView({line: ptrace.compiledCodeLine, ch: 0}, ptrace.viewAmount);
+    $('#controls-tabs-wide li#main-code-wrapper-button').addClass('active');
+  }
+  else if (selected == 'asm-code-wrapper')
+  {
+    ptrace.compiledCode.refresh();
+    ptrace.compiledCode.scrollIntoView({line: ptrace.compiledCodeLine, ch: 0}, ptrace.viewAmount);
+    $('#controls-tabs-wide li#main-code-wrapper-button').addClass('active');
+  }
+  else
+  {
+    $('#code-wrapper div#main-code-wrapper').addClass('wide-inactive');
+    $('#code-wrapper div#asm-code-wrapper').addClass('wide-inactive');
+    $('#controls-tabs-wide li#'+selected+'-button').addClass('active');
+  }
+  $('#controls-tabs-select')[0].value = selected;
+}
+
+ptrace.setupDropdown = function()
+{
+  $('#controls-tabs-select')[0].value = "main-code-wrapper";
+  $('#controls-tabs-select').change(ptrace.onDropdown);
+  $('#main-code-wrapper-button').click(function() {
+    ptrace.onTabClick('main-code-wrapper');
+  });
+  $('#code-regs-button').click(function() {
+    ptrace.onTabClick('code-regs');
+  });
+  $('#code-vars-button').click(function() {
+    ptrace.onTabClick('code-vars');
+  });
+  $('#code-mem-button').click(function() {
+    ptrace.onTabClick('code-mem');
+  });
+}
+
 ptrace.startApp = function()
 {
   ptrace.sourceCode = this.createCodeEditor('source-code', false);
@@ -793,6 +891,7 @@ ptrace.startApp = function()
   ptrace.setupBreakpointActions();
   ptrace.setupStdinActions();
   ptrace.setupMenu("");
+  ptrace.setupDropdown();
 
   $('#menu-upload-file').change(ptrace.uploadFileHandler);
 
@@ -816,4 +915,65 @@ ptrace.loadCode = function(code)
 
   ptrace.sourceCode.setValue(code.code);
   ptrace.sourceCode.setOption('mode', code.lang.syntax);
+}
+
+ptrace.updateRegisters = function(jq, regs)
+{
+  jq('.reg-changed').removeClass('reg-changed');
+  var tbody = jq('#registers-tbody');
+  regs.forEach(function (elem) {
+    var row = "<tr id=\""+elem.name+"\">";
+    row += "<td class=\"first-row\">";
+    row += elem.name;
+    row += "</td><td>";
+    row += hexString(elem.high, elem.low);
+    row += "</td><td>";
+    row += decString(elem.high, elem.low);
+    row += "</td></tr>";
+    var trow = jq('#'+elem.name);
+    if (trow.length > 0)
+    {
+      trow.replaceWith(row);
+      if (elem.name in ptrace.prevRegs)
+      {
+        var pVal = ptrace.prevRegs[elem.name];
+        if ((elem.high != pVal.high) || (elem.low != pVal.low))
+        {
+          jq('#'+elem.name).addClass('reg-changed');
+        }
+      }
+    }
+    else
+    {
+      tbody.append(row);
+    }
+  });
+}
+
+ptrace.updateVariables = function(jq, vars)
+{
+  var tbody = jq('#variables-tbody');
+  tbody.html("");
+  vars.forEach(function (elem) {
+    var row = "<tr id=\""+elem.name+"\">";
+    row += "<td class=\"first-row\">";
+    row += elem.name;
+    row += "</td><td>";
+    row += elem.value;
+    row += "</td></tr>";
+    tbody.append(row);
+  });
+}
+
+ptrace.updateStack = function(jq, vars)
+{
+  var tbody = jq('#memory-tbody');
+  tbody.html("");
+  for (var i = 0; i < vars.length; i++)
+  {
+    var row = "<tr><td>";
+    row += vars[i];
+    row += "</td></tr>";
+    tbody.append(row);
+  }
 }

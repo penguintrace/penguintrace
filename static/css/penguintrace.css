@@ -136,6 +136,7 @@ body,
 
 #controls img {
     margin-right: 4px;
+    margin-top: 4px;
     vertical-align: bottom;
     cursor: pointer;
 }
@@ -145,19 +146,128 @@ body,
     cursor: default;
 }
 
+#controls-tabs-narrow {
+    display: none;
+}
+
+#controls-tabs-wide {
+    max-width: 950px;
+    margin: 0px auto;
+}
+
+#controls-tabs-wide li {
+    border-top: 1px solid #9ba7ab;
+}
+
+#controls-tabs-wide li.first {
+    margin-left: 0px;
+}
+
+#controls-tabs-select {
+    display: block;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 3px;
+    margin: 3px auto 6px;
+    background-color: #ffffff;
+}
+
+#controls br.clear {
+    display: none;
+}
+
+@media screen and (max-width: 310px) {
+    #controls br.clear {
+        display: initial !important;
+    }
+}
+
+@media screen and (max-width: 490px) {
+    #controls {
+        text-align: center;
+    }
+
+    #more-button, #download-button {
+        display: none;
+    }
+
+    .CodeMirror {
+        font-size: 11px;
+    }
+}
+
+#header img {
+    height: 50px;
+}
+
+@media screen and (max-width: 750px) {
+    #controls-tabs-narrow {
+      display: block;
+      margin: 0px auto;
+      text-align: center;
+    }
+
+    #controls-tabs-wide {
+      display: none;
+    }
+
+    #code-wrapper .inactive {
+      display: none;
+    }
+
+    #main-code-wrapper, #asm-code-wrapper {
+        width: 100% !important;
+    }
+
+    .CodeMirror {
+        height: unset !important;
+    }
+
+    #top-wrap {
+        position: sticky;
+        z-index: 500;
+        top: 0;
+    }
+
+    #header img {
+        height: 24px;
+    }
+
+    #controls img {
+        height: 40px;
+        width: 40px;
+    }
+}
+
+@media screen and (min-width: 751px) {
+    #code-wrapper .wide-inactive {
+        display: none;
+    }
+}
+
 #code-wrapper {
     max-width: 950px;
     margin: 0 auto;
+    text-align: center;
+    line-height: 0;
 }
 
-#main-code-wrapper {
+#main-code-wrapper, #asm-code-wrapper {
     width: 50%;
-    float: left;
+    display: inline-block;
+    text-align: initial;
 }
 
-#asm-code-wrapper {
-    width: 50%;
-    float: left;
+#code-regs, #code-vars, #code-mem {
+    display: inline-block;
+    text-align: initial;
+    line-height: initial;
+    padding: 10px;
+    font-family: monospace;
+}
+
+#code-regs.inactive, #code-vars.inactive, #code-mem.inactive {
+    display: none;
 }
 
 #content-container {
@@ -167,10 +277,8 @@ body,
 
 #console {
     max-width: 948px;
-    margin: 0 auto;
-    border-left: 1px solid #9ba7ab;
-    border-right: 1px solid #9ba7ab;
-    border-bottom: 1px solid #9ba7ab;
+    margin: -1px auto 0px;
+    border: 1px solid #9ba7ab;
     clear: both;
     font-family: monospace;
     position: relative;
@@ -257,12 +365,12 @@ body,
     color: #d8d8d8;
     font-weight: bold;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 30px;
     position: absolute;
 }
 
 #console-history-clear {
-    top: 2px;
+    top: -4px;
     right: 16px;
 }
 
@@ -331,7 +439,7 @@ body,
     background-color: rgba(0,0,0, 0.2);
     position: absolute;
     top: 0;
-    z-index: 100;
+    z-index: 600;
     display: none;
 }
 
@@ -343,6 +451,13 @@ body,
     position: relative;
     min-height: 100px;
     padding: 10px;
+}
+
+@media screen and (max-width: 600px) {
+    #menu {
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 
 #menu-title {

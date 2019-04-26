@@ -28,111 +28,6 @@ penguinTrace Extra Information
     <script type="text/javascript">
       var tabs = ['registers', 'variables', 'memory'];
 
-      function hexHalfword(half)
-      {
-        return ((half & 0xffff) | 0x10000).toString(16).substr(1);
-      }
-
-      function hexString(high, low)
-      {
-        var str = "0x";
-        str += hexHalfword(high >> 16);
-        str += " ";
-        str += hexHalfword(high);
-        str += " ";
-        str += hexHalfword(low >> 16);
-        str += " ";
-        str += hexHalfword(low);
-        return str;
-      }
-
-      function decString(high, low)
-      {
-        if (high == 0)
-        {
-          return low;
-        }
-        else if (high == 0xffffffff)
-        {
-          if (low > 0)
-          {
-            return "-"+low;
-          }
-          else
-          {
-            return low;
-          }
-        }
-        else
-        {
-          return "-";
-        }
-      }
-
-      var prevRegs = new Object();
-
-      function updateRegisters(regs)
-      {
-        $('.reg-changed').removeClass('reg-changed');
-        var tbody = $('#registers-tbody');
-        regs.forEach(function (elem) {
-          var row = "<tr id=\""+elem.name+"\">";
-          row += "<td class=\"first-row\">";
-          row += elem.name;
-          row += "</td><td>";
-          row += hexString(elem.high, elem.low);
-          row += "</td><td>";
-          row += decString(elem.high, elem.low);
-          row += "</td></tr>";
-          var trow = $('#'+elem.name);
-          if (trow.length > 0)
-          {
-            trow.replaceWith(row);
-            if (elem.name in prevRegs)
-            {
-              var pVal = prevRegs[elem.name];
-              if ((elem.high != pVal.high) || (elem.low != pVal.low))
-              {
-                $('#'+elem.name).addClass('reg-changed');
-              }
-            }
-          }
-          else
-          {
-            tbody.append(row);
-          }
-          prevRegs[elem.name] = {high: elem.high, low: elem.low};
-        });
-      }
-
-      function updateVariables(vars)
-      {
-        var tbody = $('#variables-tbody');
-        tbody.html("");
-        vars.forEach(function (elem) {
-          var row = "<tr id=\""+elem.name+"\">";
-          row += "<td class=\"first-row\">";
-          row += elem.name;
-          row += "</td><td>";
-          row += elem.value;
-          row += "</td></tr>";
-          tbody.append(row);
-        });
-      }
-
-      function updateStack(vars)
-      {
-        var tbody = $('#memory-tbody');
-        tbody.html("");
-        for (var i = 0; i < vars.length; i++)
-        {
-          var row = "<tr><td>";
-          row += vars[i];
-          row += "</td></tr>";
-          tbody.append(row);
-        }
-      }
-
       function doLoad()
       {
         tabs.forEach(function (elem) {
@@ -175,7 +70,7 @@ penguinTrace Extra Information
         <table id="registers-table">
           <thead>
             <tr>
-              <th class="first-row">Register</th>
+              <th class="first-row">Reg</th>
               <th>Hex</th>
               <th>decimal</th>
             </tr>
