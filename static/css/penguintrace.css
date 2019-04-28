@@ -38,24 +38,21 @@ body,
     padding: 0;
 }
 
+#header {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+@supports(padding: max(0px)) {
+    #header, #controls-container {
+        padding-left:   max(10px, env(safe-area-inset-left));
+        padding-right:  max(10px, env(safe-area-inset-right));
+        box-sizing: border-box;
+    }
+}
+
 .hidden {
     display: none;
-}
-
-::-webkit-scrollbar {
-    width: 10px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-}
-
-::-webkit-scrollbar-thumb {
-    background: #8bc5da; 
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #207b9a; 
 }
 
 #header-container {
@@ -82,7 +79,8 @@ body,
     font-family: "Major Mono Display", monospace;
     font-weight: bold;
     text-align: left;
-    padding: 5px 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 #header-popup {
@@ -220,11 +218,12 @@ body,
     }
 
     .CodeMirror {
-        height: unset !important;
+        height: auto !important;
     }
 
     #top-wrap {
         position: sticky;
+        position: -webkit-sticky;
         z-index: 500;
         top: 0;
     }
@@ -243,23 +242,46 @@ body,
     #code-wrapper .wide-inactive {
         display: none;
     }
+
+    #main-code-wrapper, #asm-code-wrapper {
+        float: left;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #8bc5da;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #207b9a;
+    }
 }
 
 #code-wrapper {
-    max-width: 950px;
-    margin: 0 auto;
+    margin-left: env(safe-area-inset-left);
+    margin-right: env(safe-area-inset-right);
     text-align: center;
     line-height: 0;
 }
 
+#code-wrapper-wrapper {
+    margin: 0 auto;
+    max-width: 950px;
+}
+
 #main-code-wrapper, #asm-code-wrapper {
     width: 50%;
-    display: inline-block;
     text-align: initial;
 }
 
 #code-regs, #code-vars, #code-mem {
-    display: inline-block;
     text-align: initial;
     line-height: initial;
     padding: 10px;
@@ -276,11 +298,18 @@ body,
 }
 
 #console {
+    margin-left: env(safe-area-inset-left);
+    margin-right: env(safe-area-inset-right);
+    margin-bottom: env(safe-area-inset-bottom);
+    border: 1px solid #9ba7ab;
+    font-family: monospace;
+    position: relative;
+}
+
+#console-wrapper {
     max-width: 948px;
     margin: -1px auto 0px;
-    border: 1px solid #9ba7ab;
     clear: both;
-    font-family: monospace;
     position: relative;
 }
 

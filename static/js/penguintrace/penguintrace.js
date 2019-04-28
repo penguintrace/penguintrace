@@ -243,7 +243,8 @@ ptrace.createCodeEditor = function (id, readOnly)
   var code = CodeMirror.fromTextArea(elem, {
     lineNumbers: true,
     readOnly: readOnly,
-    gutters: ["CodeMirror-linenumbers", "breakpoints"]
+    gutters: ["CodeMirror-linenumbers", "breakpoints"],
+    viewportMargin: Infinity
   });
   return code;
 }
@@ -881,6 +882,31 @@ ptrace.setupDropdown = function()
   });
 }
 
+ptrace.prevWidth = 0;
+
+ptrace.resizeHandle = function(e)
+{
+  var newWidth = e.target.innerWidth;
+
+  if (ptrace.prevWidth != 0)
+  {
+    if (((ptrace.prevWidth <= 750) && (newWidth  > 750)) ||
+        ((ptrace.prevWidth  > 750) && (newWidth <= 750)))
+    {
+      ptrace.refreshHandle();
+    }
+  }
+
+  ptrace.prevWidth = newWidth;
+}
+
+ptrace.refreshHandle = function()
+{
+  ptrace.sourceCode.refresh();
+  ptrace.compiledCode.refresh();
+}
+
+
 ptrace.startApp = function()
 {
   ptrace.sourceCode = this.createCodeEditor('source-code', false);
@@ -894,6 +920,9 @@ ptrace.startApp = function()
   ptrace.setupDropdown();
 
   $('#menu-upload-file').change(ptrace.uploadFileHandler);
+
+  $(window).resize(ptrace.resizeHandle);
+  window.addEventListener("orientationchange", ptrace.refreshHandle, false);
 
   ptrace.changeState("IDLE");
 
