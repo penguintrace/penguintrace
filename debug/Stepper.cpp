@@ -479,7 +479,8 @@ namespace penguinTrace
       }
       else
       {
-        if (step == STEP_INSTR)
+        if ((step == STEP_INSTR) ||
+            ((step == STEP_LINE) & STEPPER_ALWAYS_SINGLE_STEP))
         {
           int retval = ptrace(PTRACE_SINGLESTEP, childPid, nullptr, nullptr);
           if (retval != 0)
