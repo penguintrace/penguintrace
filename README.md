@@ -12,7 +12,7 @@ penguinTrace runs on Linux and supports the AMD64/X86-64 and AArch64 architectur
 
 The primary goal of penguinTrace is to allow exploring how programs execute on a processor, however the development provided an opportunity to explore how debuggers work and some lower-level details of interaction with the kernel.
 
-**Note:** penguinTrace allows running arbitrary code as part of its design. By default it will only listen for connections from the local machine. It should only be configured to listen for remote connections on a trusted network and not exposed to the interface. This can be mitigated by running penguinTrace in a container, and a limited degree of isolation of stepped code can be provided when ```libcap``` is available.
+> **Note:** penguinTrace allows running arbitrary code as part of its design. By default it will only listen for connections from the local machine. It should only be configured to listen for remote connections on a trusted network and not exposed to the interface. This can be mitigated by running penguinTrace in a container, and a limited degree of isolation of stepped code can be provided when ```libcap``` is available.
 
 ## Getting Started
 
@@ -42,6 +42,12 @@ Once penguinTrace is built, running the ```penguintrace``` binary will start the
 If built in a container it can then be run with ```docker run -it -p 127.0.0.1:8080:8080 --tmpfs /tmp:exec --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN --rm --security-opt apparmor=unconfined penguintrace penguintrace```. See [Containers](#containers) for details on better isolating the container.
 
 Then navigate to [127.0.0.1:8080](http://127.0.0.1:8080) or [localhost:8080](http://localhost:8080) to access the web interface.
+
+> **Note:** In order to run on port 80, you can modify the `docker run` command to map from port 8080 to port 80, e.g. `-p 127.0.0.1:80:8080`.
+>
+> If built locally, you can modify the binary to allow it to bind to port 80 with `sudo setcap CAP_NET_BIND_SERVICE=+ep penguintrace`. It can then be run with `penguintrace -c SERVER_PORT 80`
+>
+> penguinTrace defaults to port 8080 as it is intended to be run as an unprivileged user.
 
 #### Temporary Files
 
