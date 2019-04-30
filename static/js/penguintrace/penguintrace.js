@@ -822,6 +822,7 @@ ptrace.setupMenu = function(arch)
       elem.click(function() {
         var c = code;
         ptrace.loadCode(c);
+        $('#menu-background').css('display', 'none');
       });
       $('#menu-code').append(elem);
     })();
