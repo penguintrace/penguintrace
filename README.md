@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[penguinTrace](https://penguintrace.org/) is intended to help build an understanding of how programs run at the hardware level. It provides a way to see what instructions compile to, and then step through those instructions and see how they affect machine state as well as how this maps back to variables in the original program.
+[penguinTrace](https://penguintrace.org/) is intended to help build an understanding of how programs run at the hardware level. It provides a way to see what instructions compile to, and then step through those instructions and see how they affect machine state as well as how this maps back to variables in the original program. A bit more [background](https://penguintrace.org/2019/04/29/welcome-and-background.html) is available on the website.
 
 penguinTrace starts a web-server which provides a web interface to edit and run code. Code can be developed in C, C++ or Assembly. The resulting assembly is then displayed and can then be stepped through, with the values of hardware registers and variables in the current scope shown.
 
