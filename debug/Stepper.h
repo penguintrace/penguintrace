@@ -25,6 +25,7 @@
 
 #include <queue>
 #include <set>
+#include <vector>
 
 #include "../common/ComponentLogger.h"
 #include "../object/Parser.h"
@@ -190,7 +191,7 @@ namespace penguinTrace
       std::queue<std::string> stdin;
       std::queue<std::string> stdout;
 
-      std::list<std::pair<bool, std::string> > mapDirs;
+      std::vector<std::pair<bool, std::string> > mapDirs;
 
       // Cached values
       uint64_t cachedPC;

@@ -43,6 +43,7 @@ namespace penguinTrace
   std::string C_CXX_COMPILER_BIN      = "CXX_COMPILER_BIN";
   std::string C_CLANG_BIN             = "CLANG_BIN";
   std::string C_OBJCOPY_BIN           = "OBJCOPY_BIN";
+  std::string C_LIB_DIRS              = "LIB_DIRS";
   std::string C_SERVER_PORT           = "SERVER_PORT";
   std::string C_DELETE_TEMP_FILES     = "DELETE_TEMP_FILES";
   std::string C_SERVER_GLOBAL         = "SERVER_GLOBAL";
@@ -131,6 +132,11 @@ namespace penguinTrace
         ConfigDefault(true,
                       CfgValue(std::string("")),
                       "Path to objcopy") },
+      {C_LIB_DIRS,
+        ConfigDefault(true,
+                      CfgValue(std::string("/lib:/lib64:/usr/lib")),
+                      "Path to objcopy",
+                      RegexVal("[.a-zA-Z0-9\\/]+(:[.a-zA-Z0-9\\/]+)*")) },
       {C_SERVER_PORT,
         ConfigDefault(true,
                       CfgValue((int64_t)8080),

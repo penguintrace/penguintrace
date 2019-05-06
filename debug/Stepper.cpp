@@ -70,11 +70,62 @@ namespace penguinTrace
     firstSymbols.push("main");
     firstSymbols.push("_start");
 
-    // Trusted library directories
-    mapDirs.push_back({ true, "/lib"});
-    mapDirs.push_back({ true, "/lib64"});
-    mapDirs.push_back({false, "/usr"});
-    mapDirs.push_back({ true, "/usr/lib"});
+    auto dirs = Config::get(C_LIB_DIRS).String();
+    auto dirList = split(dirs, ':');
+    for (auto d : dirList)
+    {
+      auto pathCompList = split(d, '/');
+      std::string prefix = "";
+      for (int i = 0; i < pathCompList.size(); i++)
+      {
+        std::string p = pathCompList[i];
+        if (!(p.size() == 0))
+        {
+          prefix += "/";
+        }
+        if (p.size() != 0) // Handle trailing slash
+        {
+          bool end = i == (pathCompList.size()-1);
+          prefix += p;
+          bool inList = false;
+          for (int j = 0; j < mapDirs.size(); j++)
+          {
+            auto m = mapDirs[j];
+            if (m.second == prefix)
+            {
+              inList = true;
+              if (end && ! m.first)
+              {
+                mapDirs[j].first = true;
+              }
+            }
+          }
+
+          if (!inList)
+          {
+            mapDirs.push_back({end, prefix});
+          }
+
+        }
+      }
+    }
+
+    logger->log(Logger::DBG, [&]() {
+      std::stringstream s;
+
+      s << "Directories to mount in sandbox:";
+
+      for (auto m : mapDirs)
+      {
+        s << std::endl << m.second;
+        if (m.first)
+          {
+            s << " [mounted]";
+          }
+      }
+
+      return s.str();
+    });
   }
 
   Stepper::~Stepper()
