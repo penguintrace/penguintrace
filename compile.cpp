@@ -72,6 +72,10 @@ int main(int argc, char **argv)
       {
         lang = "c";
       }
+      else if ((extension == "rs"))
+      {
+        lang = "rust";
+      }
       else
       {
         // Will fail on compile

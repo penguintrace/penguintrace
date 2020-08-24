@@ -41,6 +41,7 @@ namespace penguinTrace
   // Names for config file/command line
   std::string C_C_COMPILER_BIN        = "C_COMPILER_BIN";
   std::string C_CXX_COMPILER_BIN      = "CXX_COMPILER_BIN";
+  std::string C_RUSTC_COMPILER_BIN    = "RUSTC_COMPILER_BIN";
   std::string C_CLANG_BIN             = "CLANG_BIN";
   std::string C_OBJCOPY_BIN           = "OBJCOPY_BIN";
   std::string C_LIB_DIRS              = "LIB_DIRS";
@@ -124,6 +125,10 @@ namespace penguinTrace
         ConfigDefault(true,
                       CfgValue(std::string("")),
                       "Path to C++ compiler") },
+      {C_RUSTC_COMPILER_BIN,
+        ConfigDefault(true,
+                      CfgValue(std::string("")),
+                      "Path to Rust compiler") },
       {C_CLANG_BIN,
         ConfigDefault(true,
                       CfgValue(std::string("")),
@@ -346,6 +351,7 @@ namespace penguinTrace
 
     getPath(C_C_COMPILER_BIN,   "gcc");
     getPath(C_CXX_COMPILER_BIN, "g++");
+    getPath(C_RUSTC_COMPILER_BIN, "rustc");
     getPath(C_C_COMPILER_BIN,   "clang");
     getPath(C_CXX_COMPILER_BIN, "clang++");
     getPath(C_CLANG_BIN,        "clang");

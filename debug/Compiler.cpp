@@ -82,6 +82,21 @@ namespace penguinTrace
         langExt = ".c";
         compilerCmds.push_back(const_cast<char*>(compileName.c_str()));
         compilerCmds.push_back(const_cast<char*>("-xc"));
+        // Disable position independent executables
+        // (so PC matches image)
+        compilerCmds.push_back(const_cast<char*>("-fno-pie"));
+        compilerCmds.push_back(const_cast<char*>("-no-pie"));
+        if (Config::get(C_STRICT_MODE).Bool())
+        {
+          compilerCmds.push_back(const_cast<char*>("-Wall"));
+          compilerCmds.push_back(const_cast<char*>("-Werror"));
+        }
+        else
+        {
+          // If using clang -w suppresses warnings
+          //  GCC ignores this argument
+          compilerCmds.push_back(const_cast<char*>("-w"));
+        }
       }
       else if (reqLang.compare("cxx") == 0)
       {
@@ -89,6 +104,21 @@ namespace penguinTrace
         langExt = ".cpp";
         compilerCmds.push_back(const_cast<char*>(compileName.c_str()));
         compilerCmds.push_back(const_cast<char*>("-xc++"));
+        // Disable position independent executables
+        // (so PC matches image)
+        compilerCmds.push_back(const_cast<char*>("-fno-pie"));
+        compilerCmds.push_back(const_cast<char*>("-no-pie"));
+        if (Config::get(C_STRICT_MODE).Bool())
+        {
+          compilerCmds.push_back(const_cast<char*>("-Wall"));
+          compilerCmds.push_back(const_cast<char*>("-Werror"));
+        }
+        else
+        {
+          // If using clang -w suppresses warnings
+          //  GCC ignores this argument
+          compilerCmds.push_back(const_cast<char*>("-w"));
+        }
       }
       else if (reqLang.compare("asm") == 0)
       {
@@ -97,6 +127,30 @@ namespace penguinTrace
         compilerCmds.push_back(const_cast<char*>(compileName.c_str()));
         compilerCmds.push_back(const_cast<char*>("-nostdlib"));
         compilerCmds.push_back(const_cast<char*>("-xassembler"));
+        // Disable position independent executables
+        // (so PC matches image)
+        compilerCmds.push_back(const_cast<char*>("-fno-pie"));
+        compilerCmds.push_back(const_cast<char*>("-no-pie"));
+        if (Config::get(C_STRICT_MODE).Bool())
+        {
+          compilerCmds.push_back(const_cast<char*>("-Wall"));
+          compilerCmds.push_back(const_cast<char*>("-Werror"));
+        }
+        else
+        {
+          // If using clang -w suppresses warnings
+          //  GCC ignores this argument
+          compilerCmds.push_back(const_cast<char*>("-w"));
+        }
+      }
+      else if (reqLang.compare("rust") == 0 &&
+               Config::get(C_RUSTC_COMPILER_BIN).String().size() > 0)
+      {
+        compileName = Config::get(C_RUSTC_COMPILER_BIN).String();
+        langExt = ".rs";
+        compilerCmds.push_back(const_cast<char*>(compileName.c_str()));
+        compilerCmds.push_back(const_cast<char*>("-Crelocation-model=static"));
+        compilerCmds.push_back(const_cast<char*>("-Cprefer-dynamic=yes"));
       }
       else
       {
@@ -116,7 +170,10 @@ namespace penguinTrace
 
     if (ok)
     {
-      clangParse();
+      if (reqLang.compare("rust") != 0)
+      {
+        clangParse();
+      }
       // Compile with GCC/Clang
       return compile();
     }
@@ -361,22 +418,6 @@ namespace penguinTrace
       compilerCmds.push_back(const_cast<char*>(cTmpSrcFile));
       // Add debug information
       compilerCmds.push_back(const_cast<char*>("-g"));
-      // Disable position independent executables
-      // (so PC matches image)
-      compilerCmds.push_back(const_cast<char*>("-fno-pie"));
-      compilerCmds.push_back(const_cast<char*>("-no-pie"));
-      if (Config::get(C_STRICT_MODE).Bool())
-      {
-        compilerCmds.push_back(const_cast<char*>("-Wall"));
-        compilerCmds.push_back(const_cast<char*>("-Werror"));
-      }
-      else
-      {
-        // If using clang -w suppresses warnings
-        //  GCC ignores this argument
-        compilerCmds.push_back(const_cast<char*>("-w"));
-      }
-      //
       compilerCmds.push_back(const_cast<char*>("-o"));
       compilerCmds.push_back(const_cast<char*>(tmpOutputFile));
       compilerCmds.push_back(nullptr);

@@ -55,9 +55,10 @@ function decString(high, low)
 var ptrace = new Object();
 
 ptrace.languages = {
-  c   : {name: "C",        syntax: "text/x-csrc", lang: "c"},
-  cxx : {name: "C++",      syntax: "text/x-csrc", lang: "cxx"},
-  asm : {name: "Assembly", syntax: "gas",         lang: "asm"}
+  c    : {name: "C",        syntax: "text/x-csrc", lang: "c"},
+  cxx  : {name: "C++",      syntax: "text/x-csrc", lang: "cxx"},
+  asm  : {name: "Assembly", syntax: "gas",         lang: "asm"},
+  rust : {name: "Rust",     syntax: "text/x-csrc", lang: "rust"}
 };
 
 ptrace.architectures = {
@@ -70,10 +71,12 @@ ptrace.supportedArchitectures = [
   ptrace.architectures.x86_64
 ];
 
+// TODO query languages from server
 ptrace.supportedLanguages = [
   ptrace.languages.c,
   ptrace.languages.cxx,
-  ptrace.languages.asm
+  ptrace.languages.asm,
+  ptrace.languages.rust
 ];
 
 ptrace.currentLanguage = null;

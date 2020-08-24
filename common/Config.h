@@ -164,6 +164,7 @@ namespace penguinTrace
 
   extern std::string C_C_COMPILER_BIN;
   extern std::string C_CXX_COMPILER_BIN;
+  extern std::string C_RUSTC_COMPILER_BIN;
   extern std::string C_CLANG_BIN;
   extern std::string C_OBJCOPY_BIN;
   extern std::string C_LIB_DIRS;

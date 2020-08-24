@@ -213,6 +213,22 @@ namespace penguinTrace
           }
           return nullptr;
         }
+        DIE* functionByName(std::string name)
+        {
+          if (isFunction())
+          {
+            if (hasName() && getName().compare(name) == 0)
+            {
+              return this;
+            }
+          }
+          for (auto it = traverse.getChildIterator(false); !it.done(); it.next())
+          {
+            DIE* d = it.value()->functionByName(name);
+            if (d != nullptr) return d;
+          }
+          return nullptr;
+        }
         void dataObjects(uint64_t pc, std::list<DIE*>& list)
         {
           if (hasPcRange())

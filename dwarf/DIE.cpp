@@ -227,6 +227,7 @@ namespace penguinTrace
       std::stringstream s;
       switch (numBytes)
       {
+        case 0: return 0;
         case 1: return value & 0xff;
         case 2: return value & 0xffff;
         case 4: return value & 0xffffffff;
@@ -274,6 +275,12 @@ namespace penguinTrace
         else if (op == dwarf_t::DW_OP_stack_value)
         {
           break;
+        }
+        else if (op == dwarf_t::DW_OP_plus_uconst)
+        {
+          uint64_t val = stack.front().first;
+          stack.pop();
+          stack.push({operand.first + val, 0});
         }
         else if (op == dwarf_t::DW_OP_const1u)
         {
@@ -450,6 +457,9 @@ namespace penguinTrace
         case dwarf_t::DW_TAG_structure_type:
           typeStrCache = hasName() ? "struct " + ns + getName() : "{anon struct}";
           break;
+        case dwarf_t::DW_TAG_union_type:
+          typeStrCache = hasName() ? "union " + ns + getName() : "{anon union}";
+          break;
         case dwarf_t::DW_TAG_enumeration_type:
           typeStrCache = hasName() ? "enum " + ns + getName() : "{anon enum}";
           break;
@@ -480,6 +490,9 @@ namespace penguinTrace
         case dwarf_t::DW_TAG_typedef:
           assert(hasName());
           typeStrCache = ns + getName();
+          break;
+        case dwarf_t::DW_TAG_subroutine_type:
+          typeStrCache = ns;
           break;
         default:
           throw Exception(dwarf_t::tag_str(tag)+"\n"+toString(true), __EINFO__);

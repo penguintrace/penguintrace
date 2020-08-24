@@ -78,6 +78,11 @@ namespace penguinTrace
           if (!parsed) parse();
           return info->functionContaining(addr);
         }
+        DIE *functionByName(std::string name)
+        {
+          if (!parsed) parse();
+          return info->functionByName(name);
+        }
         void dataObjects(uint64_t pc, std::list<DIE*>& list)
         {
           if (!parsed) parse();

@@ -418,23 +418,38 @@ namespace penguinTrace
 
     getMemoryRanges();
 
-    if (symItr == parser->getSymbolNameMap().end())
+    auto mainFunc = dwarfInfo.functionByName("main");
+    auto startPc  = 0;
+
+    if (mainFunc != nullptr)
     {
-      logger->log(Logger::WARN, "No starting symbol found");
-      cachedPC = 0;
+      // Rust has a "main" symbol which is not the "main" function from the
+      //  source, but it is correctly respresented in the dwarf information so
+      //  use that in preference to searching by symbol if available.
+      logger->log(Logger::INFO, "Using starting function 'main'");
+      startPc = mainFunc->lowPC();
     }
-    else
+    else if (symItr != parser->getSymbolNameMap().end())
     {
       std::stringstream s;
       s << "Using starting symbol '" << symItr->first << "'";
       logger->log(Logger::INFO, s.str());
 
+      startPc = symItr->second->getAddress();
+    }
+    else
+    {
+      logger->log(Logger::WARN, "No starting symbol found");
+    }
+
+    if (startPc != 0)
+    {
       // Set breakpoint at symbol
-      insertBreak(symItr->second->getAddress());
+      insertBreak(startPc);
       // Continue
       ptrace(PTRACE_CONT, childPid, nullptr, nullptr);
-      cachedPC = symItr->second->getAddress();
     }
+    cachedPC = startPc;
 
     return cachedPC;
   }

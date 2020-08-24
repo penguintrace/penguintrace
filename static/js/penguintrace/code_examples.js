@@ -22,6 +22,12 @@
 
 var codeExamples = new Object();
 
+codeExamples['rust-hello-world'] = {
+  "name": "Hello World",
+  "description": "Simple 'Hello World' example in Rust",
+  "lang": ptrace.languages.rust,
+  "code": "fn main() {\nprintln!(\"Hello World!\");\n}"
+};
 codeExamples['c-hello-world'] = {
   "name": "Hello World",
   "description": "Simple 'Hello World' example in C",
