@@ -21,6 +21,7 @@
 include make.cfg
 
 # Arch definitions
+OS_TYPE=$(shell uname -s)
 MACHINE_ARCH=$(shell uname -m)
 KERNEL_VERSION=$(shell uname -r)
 
@@ -29,6 +30,9 @@ ifeq ($(USE_CAP),1)
 	CAPSRC=capabilities/enabled
 ifeq ($(findstring Microsoft,$(KERNEL_VERSION)), Microsoft)
 $(error "WSL does not support user_namespaces, so cannot use isolation")
+endif
+ifeq ($(findstring Darwin,$(OS_TYPE)), Darwin)
+$(error "macOS (Darwin) does not support user_namespaces, so cannot use isolation")
 endif
 else
 	CAPSRC=capabilities/disabled

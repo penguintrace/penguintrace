@@ -85,9 +85,10 @@ function process_dir()
         # Code examples can mean mimetype is wrong for HTML
         ftype=`echo $ftype | sed 's/text\/[a-zA-Z\-]\+/text\/html/'`
       fi
-      FILEMAP+="{\"FL_${fl^^}\", FileInfo($fl, ${fl}_len)},"
-      FILETYPEMAP+="{\"FL_${fl^^}\", \"$ftype\"},"
-      FILELIST+="{\"${fl2}\", \"FL_${fl^^}\"},"
+      flupper=`echo $fl | tr a-z A-Z`
+      FILEMAP+="{\"FL_${flupper}\", FileInfo($fl, ${fl}_len)},"
+      FILETYPEMAP+="{\"FL_${flupper}\", \"$ftype\"},"
+      FILELIST+="{\"${fl2}\", \"FL_${flupper}\"},"
     fi
   done
 }
