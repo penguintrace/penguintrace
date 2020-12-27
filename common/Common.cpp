@@ -196,53 +196,6 @@ namespace penguinTrace
     return dir;
   }
 
-  std::pair<int, std::string> getTempFile(std::string name, bool tempDir)
-  {
-    int fd = -1;
-    std::string fname = "";
-
-    std::string nameTpl = "";
-    if (tempDir)
-    {
-      nameTpl = getTempDir();
-    }
-    nameTpl += name + "-XXXXXX";
-
-    char nameTemplate[nameTpl.length()+1];
-    nameTpl.copy(nameTemplate,nameTpl.length(),0);
-    nameTemplate[nameTpl.length()] = '\0';
-
-    int tmpFD = mkstemp(nameTemplate);
-    if (tmpFD == -1)
-    {
-      return {-1, nameTpl};
-    }
-    char fnamebuf[TEMP_FILE_NAME_BUF_LEN];
-    std::stringstream procS;
-    procS << "/proc/self/fd/" << tmpFD;
-    int fLen = 0;
-    if (tmpFD > 0)
-    {
-      fLen = readlink(procS.str().c_str(), fnamebuf, sizeof(fnamebuf));
-    }
-    std::stringstream tempFileNameS;
-
-    if (fLen > 0 && fLen != TEMP_FILE_NAME_BUF_LEN && tmpFD >= 0)
-    {
-      tempFileNameS.write(fnamebuf, fLen);
-      fname = tempFileNameS.str();
-      fd = tmpFD;
-    }
-    else
-    {
-      // Overflow or error from readlink
-      fd = -1;
-      fname = nameTpl;
-    }
-
-    return {fd, fname};
-  }
-
   std::pair<bool, std::string> getTempDir(std::string name)
   {
     bool ok = false;

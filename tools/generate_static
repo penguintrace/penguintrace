@@ -76,10 +76,14 @@ function process_dir()
         echo "  extern unsigned int ${fl}_len;"
         echo "  extern unsigned char $fl[];"
       fi
-      ftype=`file -bi $f`
+      ftype=`file -b --mime $f`
       if [ "${f##*.}" == "css" ]; then
         # CSS mimetype not always picked up
         ftype=`echo $ftype | sed 's/text\/plain/text\/css/'`
+      fi
+      if [ "${f##*.}" == "js" ]; then
+        # JS mimetype not always picked up
+        ftype=`echo $ftype | sed 's/text\/plain/text\/javascript/'`
       fi
       if [ "${f##*.}" == "html" ]; then
         # Code examples can mean mimetype is wrong for HTML

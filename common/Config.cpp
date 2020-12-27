@@ -183,7 +183,7 @@ namespace penguinTrace
       {C_LOG_CFG_FILE,
         ConfigDefault(false,
                       CfgValue(std::string("")),
-                      "Configuration file for logging level (also searches ~/penguintrace.cfg.log and ./penguintrace.cfg.log)") },
+                      "Configuration file for logging level (also searches ~/penguintrace.log.cfg and ./penguintrace.log.cfg)") },
       {C_LOG_FILE,
         ConfigDefault(false,
                       CfgValue(std::string("")),
@@ -363,8 +363,13 @@ namespace penguinTrace
     }
     if (get(C_OBJCOPY_BIN).String().size() == 0)
     {
-      std::cout << "Cannot find path to objcopy" << std::endl;
-      ok = false;
+      // Try again with with llvm-objcopy if not found
+      getPath(C_OBJCOPY_BIN, "llvm-objcopy");
+      if (get(C_OBJCOPY_BIN).String().size() == 0)
+      {
+        std::cout << "Cannot find path to objcopy" << std::endl;
+        ok = false;
+      }
     }
 #ifdef USE_LIBCLANG
     if (get(C_CLANG_BIN).String().size() == 0)

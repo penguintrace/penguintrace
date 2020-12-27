@@ -22,7 +22,7 @@ include make.cfg
 
 # Arch definitions
 OS_TYPE=$(shell uname -s)
-MACHINE_ARCH=$(shell uname -m)
+MACHINE_ARCH=$(subst arm64,aarch64,$(shell uname -m))
 KERNEL_VERSION=$(shell uname -r)
 
 # Other conditional code
@@ -38,7 +38,17 @@ else
 	CAPSRC=capabilities/disabled
 endif
 
+ifeq ($(USE_ELF),1)
+ifeq ($(findstring Darwin,$(OS_TYPE)), Darwin)
+$(error "macOS (Darwin) does not use ELF, so cannot use ELF parser")
+endif
+endif
+
 trimslashes = $(if $(filter %/,$(1)),$(call trimslashes,$(patsubst %/,%,$(1))),$(1))
+OS_TYPE_LOWER = $(shell echo $(OS_TYPE) | tr A-Z a-z)
+
+MACHINE_DIRS=$(MACHINE_ARCH) $(OS_TYPE_LOWER) $(OS_TYPE_LOWER)_$(MACHINE_ARCH)
+MACHINE_INC_DIRS=-I$(MACHINE_ARCH) -I$(OS_TYPE_LOWER) -I$(OS_TYPE_LOWER)_$(MACHINE_ARCH)
 
 BUILDDIR = $(call trimslashes, $(BUILD))
 
@@ -48,7 +58,7 @@ CLI_BUILT_EXES = $(addprefix $(BUILDDIR)/bin/,$(CLI_EXES))
 SRV_BUILT_EXES = $(addprefix $(BUILDDIR)/bin/,$(SRV_EXES))
 ALL_BUILT_EXES = $(CLI_BUILT_EXES) $(SRV_BUILT_EXES)
 
-SRC_DIRS = common debug object dwarf $(MACHINE_ARCH) $(CAPSRC)
+SRC_DIRS = common debug object dwarf $(MACHINE_DIRS) $(CAPSRC)
 SRV_SRC_DIRS = server penguintrace
 SRCS = $(wildcard $(addsuffix /*.cpp, $(SRC_DIRS)))
 SRV_SRCS = $(wildcard $(addsuffix /*.cpp, $(SRV_SRC_DIRS))) server/static_files.cpp
@@ -60,7 +70,7 @@ DEPS = $(addprefix $(BUILDDIR)/,$(subst .cpp,.d,$(ALL_SRCS)))
 
 DEPFLAGS = -MT $@ -MMD -MP -MF $(BUILDDIR)/$*.d
 #CFLAGS += -Wall -Werror
-CXXFLAGS += -I$(MACHINE_ARCH) -Wall -Werror -std=c++11 -pthread $(DEPFLAGS)
+CXXFLAGS += $(MACHINE_INC_DIRS) -Wall -Werror -std=c++11 -pthread $(DEPFLAGS)
 LDFLAGS = -lutil
 ifeq ($(USE_CAP),1)
 	LDFLAGS+= -lcap

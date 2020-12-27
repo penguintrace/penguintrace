@@ -18,43 +18,16 @@
 // <https://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------
 //
-// AArch64 specific debugging behaviour
+// penguinTrace Process Stepper - Darwin specific
 
-#include "../debug/Stepper.h"
+#ifndef LINUX_STEPPER_OS_H_
+#define LINUX_STEPPER_OS_H_
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
 
-#include <string.h>
 
 namespace penguinTrace
 {
-  const uint32_t BREAKPOINT_WORD = 0xd4200000UL;
-  const uint32_t RETURN_WORD     = 0xd65f0000UL;
-  const uint32_t RETURN_MASK     = 0xfffffc1fUL;
-
-  uint64_t Stepper::breakPC(uint64_t pc)
-  {
-    return pc;
-  }
-
-  bool Stepper::isSyscall(uint64_t pc)
-  {
-    uint32_t instr = getChildWord(pc);
-    return (instr & 0xffe0001f) == 0xd4000001;
-  }
-
-  Stepper::Syscall Stepper::getSyscall()
-  {
-    uint64_t num = registerValues["x8"];
-    std::vector<uint64_t> args;
-    return Syscall(num, args);
-  }
-
-  uint64_t Stepper::callReturnAddr(uint64_t pc)
-  {
-    return pc+MIN_INSTR_BYTES;
-  }
 
 } /* namespace penguinTrace */
+
+#endif /* LINUX_STEPPER_OS_H_ */

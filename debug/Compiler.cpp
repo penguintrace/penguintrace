@@ -219,6 +219,18 @@ namespace penguinTrace
 
   bool Compiler::cmdWrap(std::vector<char *> args, std::string key)
   {
+    std::stringstream s;
+    s << "Command: ";
+    for (auto it = args.begin(); it != args.end(); ++it)
+    {
+      if (it != args.begin()) s << " ";
+      if (*it != nullptr)
+      {
+        s << *it;
+      }
+    }
+    logger->log(Logger::TRACE, s.str());
+
     int pOutToParent[PIPE_NUM];
     int pErrToParent[PIPE_NUM];
 
@@ -335,23 +347,10 @@ namespace penguinTrace
     bool ok = true;
 
     auto tempSrcFile = getTempFile(Config::get(C_TEMP_FILE_TPL).String()+"-src");
-    auto tempCfgFile = getTempFile(Config::get(C_TEMP_FILE_TPL).String()+"-cfg");
 
     std::ofstream srcFile(tempSrcFile.second);
     srcFile << source;
     srcFile.close();
-
-    std::ofstream cfgFile(tempCfgFile.second);
-    cfgFile << requestArgsString;
-    cfgFile.close();
-
-    std::stringstream srcStr;
-    srcStr << ELF_SOURCE_SECTION << "=" << tempSrcFile.second;
-    std::string copySrcStr = srcStr.str();
-
-    std::stringstream cfgStr;
-    cfgStr << ELF_CONFIG_SECTION << "=" << tempCfgFile.second;
-    std::string copyCfgStr = cfgStr.str();
 
     const char* cTmpSrcFile    = tempSrcFile.second.c_str();
     const char* tmpOutputFile  = execFilename.c_str();
@@ -384,28 +383,46 @@ namespace penguinTrace
       ok &= cmdWrap(compilerCmds, "Compile");
     }
 
-    if (ok)
+    if (ok && canEmbedSource())
     {
+      auto tempCfgFile = getTempFile(Config::get(C_TEMP_FILE_TPL).String()+"-cfg");
+
+      std::ofstream cfgFile(tempCfgFile.second);
+      cfgFile << requestArgsString;
+      cfgFile.close();
+
+      std::stringstream srcStr;
+      srcStr << ELF_SOURCE_SEGMENT << ELF_SOURCE_SECTION << "=" << tempSrcFile.second;
+      std::string copySrcStr = srcStr.str();
+
+      std::stringstream cfgStr;
+      cfgStr << ELF_SOURCE_SEGMENT << ELF_CONFIG_SECTION << "=" << tempCfgFile.second;
+      std::string copyCfgStr = cfgStr.str();
+
       std::string objcopy = Config::get(C_OBJCOPY_BIN).String();
       std::vector<char*> args;
 
       const char* cCopySrcArg = copySrcStr.c_str();
       const char* cCopyCfgArg = copyCfgStr.c_str();
       const char* cObjcopy    = objcopy.c_str();
+      std::vector<std::string> execPath = split(execFilename, '/');
+      std::string dbgFile     = debugFilename(execFilename, execPath[execPath.size()-1]);
+      const char* cDbgFile    = dbgFile.c_str();
 
       args.push_back(const_cast<char*>(cObjcopy));
       args.push_back(const_cast<char*>("--add-section"));
       args.push_back(const_cast<char*>(cCopySrcArg));
       args.push_back(const_cast<char*>("--add-section"));
       args.push_back(const_cast<char*>(cCopyCfgArg));
-      args.push_back(const_cast<char*>(tmpOutputFile));
+      args.push_back(const_cast<char*>(cDbgFile));
       args.push_back(nullptr);
 
       ok &= cmdWrap(args, "Embed Source");
+
+      tryUnlink(tempCfgFile.second);
     }
 
     tryUnlink(tempSrcFile.second);
-    tryUnlink(tempCfgFile.second);
 
     return pc;
   }

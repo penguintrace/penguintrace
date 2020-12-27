@@ -37,6 +37,7 @@
 #include "Arch.h"
 #include "Config.h"
 #include "Exception.h"
+#include "OS.h"
 
 namespace penguinTrace
 {
@@ -72,18 +73,6 @@ namespace penguinTrace
   inline bool errorTryAgain(int err)
   {
     return (err == EAGAIN) || (err == EWOULDBLOCK);
-  }
-
-  inline bool errorOkNetError(int err)
-  {
-    return (err == ENETDOWN) ||
-           (err == EPROTO) ||
-           (err == ENOPROTOOPT) ||
-           (err == EHOSTDOWN) ||
-           (err == ENONET) ||
-           (err == EHOSTUNREACH) ||
-           (err == EOPNOTSUPP) ||
-           (err == ENETUNREACH);
   }
 
   const int FD_STDIN = 0;

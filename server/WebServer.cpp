@@ -36,6 +36,7 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace penguinTrace
 {
@@ -73,7 +74,7 @@ namespace penguinTrace
       sessionMgr->endAllSessions();
     }
 
-    void WebServer::getServAddr(sockaddr_storage* addr)
+    size_t WebServer::getServAddr(sockaddr_storage* addr)
     {
       if (Config::get(C_SERVER_IPV6).Bool())
       {
@@ -90,6 +91,7 @@ namespace penguinTrace
         a->sin6_port = htons(Config::get(C_SERVER_PORT).Int());
         a->sin6_flowinfo = 0;
         a->sin6_scope_id = 0;
+        return sizeof(sockaddr_in6);
       }
       else
       {
@@ -104,6 +106,7 @@ namespace penguinTrace
           a->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
         }
         a->sin_port = htons(Config::get(C_SERVER_PORT).Int());
+        return sizeof(sockaddr_in);
       }
     }
 
@@ -112,13 +115,21 @@ namespace penguinTrace
       sockaddr_storage servAddr;
       int ret = 0;
 
-      getServAddr(&servAddr);
+      size_t addrSize = getServAddr(&servAddr);
 
-      ret = bind(socketDescriptor, (sockaddr*)&servAddr, sizeof(servAddr));
-      if (ret != 0) return false;
+      ret = bind(socketDescriptor, (sockaddr*)&servAddr, addrSize);
+      if (ret != 0)
+      {
+        logger->log(Logger::WARN, "'bind' call failed");
+        return false;
+      }
 
       ret = listen(socketDescriptor, SERVER_QUEUE_SIZE);
-      if (ret != 0) return false;
+      if (ret != 0)
+      {
+        logger->log(Logger::WARN, "'listen' call failed");
+        return false;
+      }
 
       return true;
     }
@@ -172,10 +183,20 @@ namespace penguinTrace
       bool error = false;
 
       int sNamespace = Config::get(C_SERVER_IPV6).Bool() ? AF_INET6 : AF_INET;
-      socketDescriptor = socket(sNamespace, SOCK_STREAM | SOCK_NONBLOCK, 0);
+      // SOCK_NONBLOCK only available on linux so use fcntl to make non-blocking
+      socketDescriptor = socket(sNamespace, SOCK_STREAM, 0);
       if (socketDescriptor < 0)
       {
         logger->error(Logger::ERROR, "Opening socket failed");
+        error = true;
+      }
+      int socketFlags = fcntl(socketDescriptor, F_GETFL, 0);
+      if (socketFlags == -1) {
+        logger->error(Logger::ERROR, "Failed to get socket flags");
+        error = true;
+      }
+      if (fcntl(socketDescriptor, F_SETFL, socketFlags | O_NONBLOCK) != 0) {
+        logger->error(Logger::ERROR, "Failed to set socket non-blocking");
         error = true;
       }
 
@@ -246,14 +267,34 @@ namespace penguinTrace
             logger->log(Logger::TRACE, [&]() { return r.toString(); });
             logger->log(Logger::TRACE, respStr);
 
-            int n = write(r.getConnection(), respStr.c_str(), respStr.length());
-            if (n < 0)
+            int totalByteCount = 0;
+            while (totalByteCount < respStr.length())
             {
-              std::stringstream s;
-              s << " Writing to socket failed (";
-              s << r.clientAddr() << ") #" << r.getConnection();
-              logger->error(Logger::ERROR, s.str());
+              int n = write(r.getConnection(), respStr.c_str()+totalByteCount, respStr.length());
+              if (n < 0)
+              {
+                if (!errorTryAgain(errno))
+                {
+                  std::stringstream s;
+                  s << " Writing to socket failed (";
+                  s << r.clientAddr() << ") #" << r.getConnection();
+                  logger->error(Logger::ERROR, s.str());
+                }
+              }
+              else
+              {
+                totalByteCount += n;
+                if (totalByteCount < respStr.length())
+                {
+                  std::stringstream s;
+                  s << " Multiple write to complete response (";
+                  s << r.clientAddr() << ") #" << r.getConnection();
+                  logger->log(Logger::TRACE, s.str());
+                }
+              }
             }
+
+            close(r.getConnection());
           }
 
         }
@@ -417,6 +458,7 @@ namespace penguinTrace
         std::stringstream s;
         s << "#" << tid << " Done (" << clientAddr << ")";
         logger->log(Logger::DBG, s.str());
+        // Request should be closed by main thread after being processed
       }
       else if (n == 0)
       {
@@ -424,7 +466,9 @@ namespace penguinTrace
         // Connection was closed by other end
         s << "#" << tid << " Closed (" << clientAddr << ")";
         logger->log(Logger::DBG, s.str());
+        close(connection);
       }
+
     }
 
   } /* namespace server */

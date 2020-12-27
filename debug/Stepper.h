@@ -162,6 +162,14 @@ namespace penguinTrace
       void tidyIsolation();
       bool writeToProc(std::string fname, std::string contents);
 
+      // OS specific
+      int traceMe();
+      int traceContinue();
+      int traceStep();
+      uint32_t getChildWord(uint64_t addr);
+      long getChildLong(uint64_t addr);
+      int putChildLong(uint64_t addr, long data);
+
       std::unique_ptr<ComponentLogger> logger;
 
       // Executable Info

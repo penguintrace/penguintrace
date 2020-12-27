@@ -65,7 +65,7 @@ namespace penguinTrace
         std::string addrStr(sockaddr* addr);
         std::string addrStr(sockaddr_in6* addr);
       private:
-        void getServAddr(sockaddr_storage* addr);
+        size_t getServAddr(sockaddr_storage* addr);
         bool doBind(int socketDescriptor);
         std::unique_ptr<SessionManager> sessionMgr;
         std::unique_ptr<RouteTable> routes;

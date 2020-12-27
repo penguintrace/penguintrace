@@ -75,12 +75,12 @@ namespace penguinTrace
       }
 #else // !USE_LIBLLVM
       // Have ELF only
-      parser = new ElfParser(filename);
+      parser = new ElfParser(filename,std::move(logger));
 #endif // USE_LIBLLVM
 #else // !USE_ELF
 #ifdef USE_LIBLLVM
       // Have LIBLLVM only
-      parser = new LLVMParser(filename);
+      parser = new LLVMParser(filename,std::move(logger));
 #endif // USE_LIBLLVM
 #endif // USE_ELF
       return std::unique_ptr<Parser>(parser);

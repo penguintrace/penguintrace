@@ -21,6 +21,7 @@
 // penguinTrace Process Stepper
 
 #include "Stepper.h"
+#include "StepperOS.h"
 
 #include <iostream>
 #include <fstream>
@@ -33,9 +34,7 @@
 #include <sys/user.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
-#include <asm/ptrace.h>
 #include <fcntl.h>
-#include <pty.h>
 
 #include "../common/StreamOperations.h"
 
@@ -256,7 +255,7 @@ namespace penguinTrace
       }
 
       close(oldStderr);
-      ptrace(PTRACE_TRACEME, 0, nullptr, nullptr);
+      traceMe();
       execve(filename.c_str(), args.data(), env.data());
       std::stringstream err;
       err << "Failed to exec '" << filename << "'. " << strerror(errno) << std::endl;
@@ -402,7 +401,7 @@ namespace penguinTrace
 
   bool Stepper::isFunctionReturn(uint64_t pc)
   {
-    uint32_t instr = (uint32_t)ptrace(PTRACE_PEEKTEXT, childPid, pc, nullptr);
+    uint32_t instr = getChildWord(pc);
     return (instr & RETURN_MASK) == RETURN_WORD;
   }
 
@@ -432,7 +431,7 @@ namespace penguinTrace
       // Set breakpoint at symbol
       insertBreak(symItr->second->getAddress());
       // Continue
-      ptrace(PTRACE_CONT, childPid, nullptr, nullptr);
+      traceContinue();
       cachedPC = symItr->second->getAddress();
     }
 
@@ -525,7 +524,7 @@ namespace penguinTrace
           return s.str();
         });
         insertBreak(callReturnAddr(pc));
-        int retval = ptrace(PTRACE_CONT, childPid, nullptr, nullptr);
+        int retval = traceContinue();
         assert(retval == 0);
       }
       else
@@ -533,7 +532,7 @@ namespace penguinTrace
         if ((step == STEP_INSTR) ||
             ((step == STEP_LINE) & STEPPER_ALWAYS_SINGLE_STEP))
         {
-          int retval = ptrace(PTRACE_SINGLESTEP, childPid, nullptr, nullptr);
+          int retval = traceStep();
           if (retval != 0)
           {
             std::stringstream s;
@@ -548,20 +547,20 @@ namespace penguinTrace
           if (nextPc != 0)
           {
             insertBreak(nextPc);
-            int retval = ptrace(PTRACE_CONT, childPid, nullptr, nullptr);
+            int retval = traceContinue();
             assert(retval == 0);
             stepAgain = true;
           }
           else
           {
             // If can't find line information - single step
-            int retval = ptrace(PTRACE_SINGLESTEP, childPid, nullptr, nullptr);
+            int retval = traceStep();
             assert(retval == 0);
           }
         }
         else if (step == STEP_CONT)
         {
-          int retval = ptrace(PTRACE_CONT, childPid, nullptr, nullptr);
+          int retval = traceContinue();
           assert(retval == 0);
           stepAgain = true;
         }
@@ -609,7 +608,7 @@ namespace penguinTrace
 
   uint64_t Stepper::getMemValue(uint64_t ptr)
   {
-    long data = ptrace(PTRACE_PEEKTEXT, childPid, ptr, nullptr);
+    long data = getChildLong(ptr);
     std::stringstream s;
     s << "Getting value at " << HexPrint(ptr, 16) << " = " << HexPrint(data, 16);
     logger->log(Logger::TRACE, s.str());
@@ -899,12 +898,12 @@ namespace penguinTrace
         s << "Inserting breakpoint @" << penguinTrace::HexPrint(addr, 16);
         return s.str();
       });
-      long prevInstr = ptrace(PTRACE_PEEKTEXT, childPid, addr, nullptr);
+      long prevInstr = getChildLong(addr);
       breakpointMap[addr] = prevInstr;
-      int ret = ptrace(PTRACE_POKETEXT, childPid, addr, BREAKPOINT_WORD);
+      int ret = putChildLong(addr, BREAKPOINT_WORD);
       if (MIN_INSTR_BYTES == 1)
       {
-        long newInstr = ptrace(PTRACE_PEEKTEXT, childPid, (addr & 0xffffFFFFffffFFFC), nullptr);
+        long newInstr = getChildLong(addr & 0xffffFFFFffffFFFC);
         assert(((newInstr >> ((addr & 0x3)*8)) & 0xff) == BREAKPOINT_WORD && "Breakpoint instruction not written");
       }
       if (ret != 0) perror("bkpt");
@@ -995,7 +994,7 @@ namespace penguinTrace
     auto itr = breakpointMap.find(addr);
     assert(itr != breakpointMap.end());
 
-    int ret = ptrace(PTRACE_POKETEXT, childPid, addr, itr->second);
+    int ret = putChildLong(addr, itr->second);
     assert(ret == 0);
     breakpointMap.erase(addr);
   }
@@ -1047,7 +1046,7 @@ namespace penguinTrace
     while (bytesToRead > 0 && !error)
     {
       errno = 0;
-      long data = ptrace(PTRACE_PEEKTEXT, childPid, addr, nullptr);
+      long data = getChildLong(addr);
       if (errno == 0)
       {
         for (unsigned i = 0; i < sizeof(data); ++i)
