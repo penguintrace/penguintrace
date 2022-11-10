@@ -279,7 +279,6 @@ namespace penguinTrace
       DIE* left = nullptr;
       DIE* right = nullptr;
       DIE* parent = nullptr;
-      DIE* store = nullptr;
       uint64_t leftOffset = 0;
       uint64_t rightOffset = 0;
       uint64_t parentOffset = 0;
@@ -330,7 +329,6 @@ namespace penguinTrace
           if (locIt.first)
           {
             storeOffset = locIt.second.getInt();
-            store = d;
           }
         }
       }
