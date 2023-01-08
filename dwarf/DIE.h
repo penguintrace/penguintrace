@@ -52,14 +52,29 @@ namespace penguinTrace
           unit_length = init_length.second;
           unit_start = ifs.tellg();
           version = ExtractUInt16(ifs);
-          abbrev_offset = ExtractSectionOffset(ifs, arch);
-          addr_bytes = ExtractUInt8(ifs);
+          if (version >= 5)
+          {
+            // drop unit_type
+            ExtractUInt8(ifs);
+
+            addr_bytes = ExtractUInt8(ifs);
+            abbrev_offset = ExtractSectionOffset(ifs, arch);
+            // Other information ignored
+          }
+          else
+          {
+            abbrev_offset = ExtractSectionOffset(ifs, arch);
+            addr_bytes = ExtractUInt8(ifs);
+          }
+          str_offset = 0;
         }
         arch_t Arch() { return arch; }
         uint16_t Version() { return version; }
         uint64_t AbbrevOffset() { return abbrev_offset; }
         uint8_t AddrBytes() { return addr_bytes; }
         uint64_t CUHeaderStart() { return hdr_start; }
+        uint64_t StrOffset() { return str_offset; }
+        void SetStrOffset(uint64_t offset) { str_offset = offset; }
         bool Contains(uint64_t offset)
         {
           return (offset < (unit_start + unit_length)) && (offset > unit_start);
@@ -75,6 +90,7 @@ namespace penguinTrace
         uint16_t version;
         uint64_t abbrev_offset;
         uint8_t addr_bytes;
+        uint64_t str_offset;
     };
 
     class DIE
@@ -103,6 +119,7 @@ namespace penguinTrace
           return parent;
         }
         DIE* getFirstChild();
+        DIE* getMainCu();
         dwarf_t::tag_t getTag()
         {
           return tag;

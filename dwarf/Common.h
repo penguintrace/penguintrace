@@ -32,10 +32,14 @@
 
 #include "../common/Exception.h"
 
+#include "../object/Parser.h"
+
 namespace penguinTrace
 {
   namespace dwarf
   {
+
+    typedef std::map<dwarf_t::section_t, penguinTrace::object::Parser::SectionPtr> SectionMap;
 
     // Mask of data bits
     const uint8_t LEB128_MASK = 0x7f;
@@ -93,6 +97,13 @@ namespace penguinTrace
     inline uint64_t ExtractUInt64(std::istream& ifs)
     {
       uint64_t value;
+      ifs.read(reinterpret_cast<char *>(&value), sizeof(value));
+      return value;
+    }
+
+    inline __uint128_t ExtractUInt128(std::istream& ifs)
+    {
+      __uint128_t value;
       ifs.read(reinterpret_cast<char *>(&value), sizeof(value));
       return value;
     }
@@ -200,6 +211,51 @@ namespace penguinTrace
       }
 
       return s;
+    }
+
+    inline std::string ExtractStrp(arch_t arch, std::istream& is, SectionMap& sections, dwarf_t::section_t section)
+    {
+      uint64_t offset = ExtractSectionOffset(is, arch);
+
+      auto it = sections.find(section);
+      assert(it != sections.end() && "Indirect string without matching section present");
+      auto iStrm = it->second->getContents();
+      std::istream istr(&iStrm);
+
+      istr.seekg(offset);
+
+      return ExtractString(istr);
+    }
+
+    inline std::string ExtractIndirectStrp(uint64_t off, arch_t arch, SectionMap& sections, dwarf_t::section_t section, dwarf_t::section_t ssection)
+    {
+      auto it = sections.find(section);
+      assert(it != sections.end() && "Indirect string without matching section present");
+      auto iStrm = it->second->getContents();
+      std::istream istr(&iStrm);
+
+      uint64_t actual_offset =
+        // Unit length
+        ((arch == DWARF64) ? 12 : 4) +
+        // Version
+        2 +
+        // Padding
+        2 +
+        // Offset
+        (off * ((arch == DWARF64) ? 8 : 4));
+
+      istr.seekg(actual_offset);
+
+      uint64_t offset = ExtractSectionOffset(istr, arch);
+
+      auto sit = sections.find(ssection);
+      assert(sit != sections.end() && "Indirect string without matching section present");
+      auto siStrm = sit->second->getContents();
+      std::istream sistr(&siStrm);
+
+      sistr.seekg(offset);
+
+      return ExtractString(sistr);
     }
 
     inline void ExtractBuffer(std::istream& ifs, std::vector<uint8_t>& buf, uint64_t length)

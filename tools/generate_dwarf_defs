@@ -29,19 +29,22 @@ from collections import OrderedDict
 DWARF_DEFINITIONS = OrderedDict()
 
 DWARF_DEFINITIONS[('section', 'Section Names', True)] = {
-	"abbrev"  : ".debug_abbrev",
-	"aranges" : ".debug_aranges",
-	"frame"   : ".debug_frame",
-	"eh_frame": ".eh_frame",
-	"info"    : ".debug_info",
-	"line"    : ".debug_line",
-	"loc"     : ".debug_loc",
-	"macinfo" : ".debug_macinfo",
-	"pubnames": ".debug_pubnames",
-	"pubtypes": ".debug_pubtypes",
-	"ranges"  : ".debug_ranges",
-	"str"     : ".debug_str",
-	"types"   : ".debug_types"
+	"abbrev"     : ".debug_abbrev",
+	"aranges"    : ".debug_aranges",
+	"frame"      : ".debug_frame",
+	"eh_frame"   : ".eh_frame",
+	"info"       : ".debug_info",
+	"line"       : ".debug_line",
+	"line_str"   : ".debug_line_str",
+	"loc"        : ".debug_loc",
+	"macinfo"    : ".debug_macinfo",
+	"pubnames"   : ".debug_pubnames",
+	"pubtypes"   : ".debug_pubtypes",
+	"ranges"     : ".debug_ranges",
+	"str"        : ".debug_str",
+	"str_offsets": ".debug_str_offsets",
+	"types"      : ".debug_types",
+	"addr"       : ".debug_addr"
 }
 
 DWARF_DEFINITIONS[('lns', 'Standard Opcode', False)] = {
@@ -229,6 +232,7 @@ DWARF_DEFINITIONS[('at', 'Attribute', False)] = {
 	"const_expr"          : 0x6c,
 	"enum_class"          : 0x6d,
 	"linkage_name"        : 0x6e,
+	"str_offsets_base"    : 0x72,
 	"lo_user"             : 0x2000,
 	"hi_user"             : 0x3fff
 }
@@ -258,7 +262,25 @@ DWARF_DEFINITIONS[('form', 'Value Form', False)] = {
 	"sec_offset"  : 0x17,
 	"exprloc"     : 0x18,
 	"flag_present": 0x19,
+	"strx"        : 0x1a,
+	"addrx"       : 0x1b,
+	"ref_sup4"    : 0x1c,
+	"strp_sup"    : 0x1d,
+	"data16"      : 0x1e,
+	"line_strp"   : 0x1f,
 	"reg_sig8"    : 0x20,
+    "implicit_const" : 0x21,
+    "loclistx"       : 0x22,
+    "rnglistx"       : 0x23,
+    "ref_sup8"       : 0x24,
+    "strx1"          : 0x25,
+    "strx2"          : 0x26,
+    "strx3"          : 0x27,
+    "strx4"          : 0x28,
+    "addrx1"         : 0x29,
+    "addrx2"         : 0x2a,
+    "addrx3"         : 0x2b,
+    "addrx4"         : 0x2c
 }
 
 DWARF_DEFINITIONS[('op', 'DWARF Operation', False)] = {
@@ -404,6 +426,14 @@ DWARF_DEFINITIONS[('ate', 'Base Type Attribute Encodings', False)] = {
 	"unsigned_fixed" : 0x0e,
 	"decimal_float"  : 0x0f,
 	"UTF"            : 0x10
+}
+
+DWARF_DEFINITIONS[('lnct', 'Line Number Header Entry', False)] = {
+	"path"           : 0x1,
+	"directory_index": 0x2,
+	"timestamp"      : 0x3,
+	"size"           : 0x4,
+	"MD5"            : 0x5
 }
 
 HDR_TEMPLATE = """

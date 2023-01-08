@@ -29,7 +29,8 @@ namespace penguinTrace
 
     std::string LineProgramHeader::Filename(int index)
     {
-      unsigned fIdx = index-1;
+      // DWARFv5 adds a file at index 0, previously this was omitted
+      unsigned fIdx = index - ((version >= 5) ? 0 : 1);
       std::stringstream err;
       err << "FILE_NOT_FOUND(" << index << ")";
       std::string dir;

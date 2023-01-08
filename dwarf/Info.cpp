@@ -178,11 +178,12 @@ namespace penguinTrace
       if (!parsedSections) parseSections();
       if (!parsedLine) parseLineSection();
 
+      parseAddrTable();
       parseAbbrev();
       parseFrame();
       parseInfo();
 
-      auto cuDie = info->getFirstChild();
+      auto cuDie = info->getMainCu();
       if (cuDie != nullptr)
       {
         if (cuDie->getTag() == dwarf_t::DW_TAG_compile_unit && cuDie->hasName())
@@ -204,20 +205,6 @@ namespace penguinTrace
       }
 
       parsed = true;
-    }
-
-    std::string Info::ExtractStrp(arch_t arch, std::istream& is)
-    {
-      uint64_t offset = ExtractSectionOffset(is, arch);
-
-      auto it = sections.find(dwarf_t::DW_SECTION_str);
-      assert(it != sections.end() && "DW_FORM_strp without .debug_str");
-      auto iStrm = it->second->getContents();
-      std::istream istr(&iStrm);
-
-      istr.seekg(offset);
-
-      return ExtractString(istr);
     }
 
     Info::CodeLocation Info::locationByPC(uint64_t pc, bool matchSrc)
@@ -337,8 +324,17 @@ namespace penguinTrace
 
             if (!entryDone)
             {
-              // Add attrib to entry
-              entry->AddAttrib( AbbrevAttrib(name, form) );
+              if (form == dwarf_t::DW_FORM_implicit_const)
+              {
+                int64_t c = ExtractSLEB128(is);
+                // Add attrib to entry
+                entry->AddAttrib( AbbrevAttrib(name, form, c) );
+              }
+              else
+              {
+                // Add attrib to entry
+                entry->AddAttrib( AbbrevAttrib(name, form) );
+              }
             }
           }
         }
@@ -347,6 +343,35 @@ namespace penguinTrace
 
         is.peek();
         done = is.eof();
+      }
+    }
+
+    void Info::parseAddrTable()
+    {
+      if (sections.find(dwarf_t::DW_SECTION_addr) != sections.end())
+      {
+        auto addrSection = sections[dwarf_t::DW_SECTION_addr];
+        auto addrStream = addrSection->getContents();
+        std::istream is(&addrStream);
+
+        ExtractInitialLength(is);
+        ExtractUInt16(is);
+        auto addr_size = ExtractUInt8(is);
+        auto segment_size = ExtractUInt8(is);
+        addrTableSize = addr_size;
+
+        if (segment_size != 0)
+        {
+          logger->log(Logger::ERROR, "Non-zero segment size unsupported");
+          return;
+        }
+
+        is.peek();
+        while (!is.eof())
+        {
+          addrTable.push_back(ExtractNumBytes(is, addr_size));
+          is.peek();
+        }
       }
     }
 
@@ -423,18 +448,22 @@ namespace penguinTrace
               {
                 AttrValue val;
                 std::vector<uint8_t> tmpBuffer;
+                uint64_t tmpOffset;
 
                 switch (it->GetForm())
                 {
                   case dwarf_t::DW_FORM_strp:
-                    val = AttrValue(it->GetForm(), ExtractStrp(header.Arch(), is));
+                    val = AttrValue(it->GetForm(), ExtractStrp(header.Arch(), is, sections, dwarf_t::DW_SECTION_str));
+                    break;
+                  case dwarf_t::DW_FORM_line_strp:
+                    val = AttrValue(it->GetForm(), ExtractStrp(header.Arch(), is, sections, dwarf_t::DW_SECTION_line_str));
                     break;
                   case dwarf_t::DW_FORM_string:
                     val = AttrValue(it->GetForm(), ExtractString(is));
                     break;
                   case dwarf_t::DW_FORM_udata:
                     // Data length is based on maximum
-                    val = AttrValue(it->GetForm(), ExtractULEB128(is), 8, true);
+                    val = AttrValue(it->GetForm(), ExtractULEB128(is), 8, false);
                     break;
                   case dwarf_t::DW_FORM_sdata:
                     // Data length is based on maximum
@@ -491,8 +520,44 @@ namespace penguinTrace
                     ExtractExprLoc(is, tmpBuffer);
                     val = AttrValue(it->GetForm(), tmpBuffer);
                     break;
+                  case dwarf_t::DW_FORM_implicit_const:
+                    val = AttrValue(it->GetForm(), it->GetConst());
+                    break;
+                  case dwarf_t::DW_FORM_strx:
+                    tmpOffset = ExtractULEB128(is);
+                    val = AttrValue(it->GetForm(), ExtractIndirectStrp(tmpOffset, header.Arch(), sections, dwarf_t::DW_SECTION_str_offsets, dwarf_t::DW_SECTION_str));
+                    break;
+                  case dwarf_t::DW_FORM_strx1:
+                    tmpOffset = ExtractUInt8(is);
+                    val = AttrValue(it->GetForm(), ExtractIndirectStrp(tmpOffset, header.Arch(), sections, dwarf_t::DW_SECTION_str_offsets, dwarf_t::DW_SECTION_str));
+                    break;
+                  case dwarf_t::DW_FORM_strx2:
+                    tmpOffset = ExtractUInt16(is);
+                    val = AttrValue(it->GetForm(), ExtractIndirectStrp(tmpOffset, header.Arch(), sections, dwarf_t::DW_SECTION_str_offsets, dwarf_t::DW_SECTION_str));
+                    break;
+                  case dwarf_t::DW_FORM_strx4:
+                    tmpOffset = ExtractUInt32(is);
+                    val = AttrValue(it->GetForm(), ExtractIndirectStrp(tmpOffset, header.Arch(), sections, dwarf_t::DW_SECTION_str_offsets, dwarf_t::DW_SECTION_str));
+                    break;
+                  case dwarf_t::DW_FORM_addrx:
+                    val = AttrValue(it->GetForm(), addrTable[ExtractULEB128(is)], addrTableSize, false);
+                    break;
+                  case dwarf_t::DW_FORM_addrx1:
+                    val = AttrValue(it->GetForm(), addrTable[ExtractUInt8(is)], addrTableSize, false);
+                    break;
+                  case dwarf_t::DW_FORM_addrx2:
+                    val = AttrValue(it->GetForm(), addrTable[ExtractUInt16(is)], addrTableSize, false);
+                    break;
+                  case dwarf_t::DW_FORM_addrx4:
+                    val = AttrValue(it->GetForm(), addrTable[ExtractUInt32(is)], addrTableSize, false);
+                    break;
                   default:
                     throw Exception("Unhandled: "+dwarf_t::form_str(it->GetForm()), __EINFO__);
+                }
+
+                if (it->GetAT() == dwarf_t::DW_AT_str_offsets_base)
+                {
+                  header.SetStrOffset(val.getInt());
                 }
 
                 die->addAttribute(it->GetAT(), val);
@@ -533,7 +598,7 @@ namespace penguinTrace
       is.peek();
       while (!is.eof())
       {
-        auto lineProgram = std::unique_ptr<LineProgramHeader>(new LineProgramHeader(is));
+        auto lineProgram = std::unique_ptr<LineProgramHeader>(new LineProgramHeader(is, sections));
         LineStateMachine state(*lineProgram);
 
         is.peek();

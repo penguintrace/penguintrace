@@ -110,16 +110,15 @@ namespace penguinTrace
           return frames->getFDEByPc(pc);
         }
       private:
-        typedef std::map<dwarf_t::section_t, penguinTrace::object::Parser::SectionPtr> SectionMap;
         void parseSections();
         void parse();
         void parseAbbrev();
+        void parseAddrTable();
         void parseInfo();
         void recurseInfoAttrs(DIE* d);
         void parseLineSection();
         void parseFrame();
         void addLineStateMachine(LineStateMachine lsm, LineProgramHeader* hdr);
-        std::string ExtractStrp(arch_t arch, std::istream& is);
         bool parsed;
         bool parsedLine;
         bool parsedSections;
@@ -132,6 +131,8 @@ namespace penguinTrace
         std::map<uint64_t, CodeLocation> locationByPc;
         std::map<uint64_t, CodeLocation> locationByLine;
         std::map<uint64_t, std::map<uint64_t, AbbrevTableEntry> > abbrevTable;
+        std::vector<uint64_t> addrTable;
+        uint64_t addrTableSize;
         std::unique_ptr<DIE> info;
     };
 

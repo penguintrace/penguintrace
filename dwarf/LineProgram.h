@@ -31,6 +31,8 @@
 #include <istream>
 #include <iomanip>
 
+#include "definitions.h"
+
 #include "Common.h"
 
 namespace penguinTrace
@@ -42,6 +44,7 @@ namespace penguinTrace
     {
       public:
         LineProgramFileEntry(std::istream& ifs)
+          : md5(0)
         {
           filename = ExtractString(ifs);
           if (Valid())
@@ -57,22 +60,28 @@ namespace penguinTrace
             file_bytes = 0;
           }
         }
+        LineProgramFileEntry(std::string name, uint64_t dir_index, uint64_t last_mod, uint64_t size, __uint128_t md5)
+          : filename(name), directory_index(dir_index), last_modified(last_mod), file_bytes(size), md5(md5)
+        {
+        }
         bool Valid() { return filename.length() > 0; }
         std::string Name() { return filename; }
         uint64_t DirIndex() { return directory_index; }
         uint64_t Timestamp() { return last_modified; }
         uint64_t FileSize() { return file_bytes; }
+        __uint128_t MD5() { return md5; }
       private:
         std::string filename;
         uint64_t directory_index;
         uint64_t last_modified;
         uint64_t file_bytes;
+        __uint128_t md5;
     };
 
     struct LineProgramHeader
     {
       public:
-        LineProgramHeader(std::istream& ifs)
+        LineProgramHeader(std::istream& ifs, SectionMap& sections)
         {
           lp_start = ifs.tellg();
           auto init_length = ExtractInitialLength(ifs);
@@ -80,6 +89,11 @@ namespace penguinTrace
           unit_length = init_length.second;
           unit_start = ifs.tellg();
           version = ExtractUInt16(ifs);
+          if (version >= 5)
+          {
+            v5_address_size = ExtractUInt8(ifs);
+            v5_segment_selector_size = ExtractUInt8(ifs);
+          }
           header_length = ExtractSectionOffset(ifs, arch);
           minimum_instruction_length = ExtractUInt8(ifs);
           if (version >= 4)
@@ -98,27 +112,147 @@ namespace penguinTrace
           {
             standard_opcode_lengths.push_back(ExtractUInt8(ifs));
           }
-          bool valid;
-          do
+          if (version >= 5)
           {
-            std::string inc_dir = ExtractString(ifs);
-            valid = inc_dir.length() > 0;
-            if (valid)
+            std::vector<std::pair<dwarf_t::lnct_t, dwarf_t::form_t>> directory_entries;
+            std::vector<std::pair<dwarf_t::lnct_t, dwarf_t::form_t>> file_entries;
+            int directory_entry_format_count = ExtractUInt8(ifs);
+            for (int i = 0; i < directory_entry_format_count; i++)
             {
-              include_directories.push_back(inc_dir);
+              dwarf_t::lnct_t content_type_code = dwarf_t::convert_lnct(ExtractULEB128(ifs));
+              dwarf_t::form_t form_code = dwarf_t::convert_form(ExtractULEB128(ifs));
+              directory_entries.push_back(std::make_pair(content_type_code, form_code));
             }
-          }
-          while (valid);
-          do
-          {
-            LineProgramFileEntry file(ifs);
-            valid = file.Valid();
-            if (valid)
+            uint64_t dir_names_count = ExtractULEB128(ifs);
+            for (int i = 0; i < dir_names_count; i++)
             {
+              std::string dir_name = "";
+              for (auto it = directory_entries.begin(); it != directory_entries.end(); it++)
+              {
+                std::string tmp;
+                switch (it->second) {
+                  case dwarf_t::DW_FORM_line_strp:
+                    tmp = ExtractStrp(arch, ifs, sections, dwarf_t::DW_SECTION_line_str);
+                    break;
+                  default:
+                    throw Exception("Unknown form", __EINFO__);
+                }
+                switch (it->first) {
+                  case dwarf_t::DW_LNCT_path:
+                    dir_name = tmp;
+                    break;
+                  default:
+                    throw Exception("Unknown type", __EINFO__);
+                }
+              }
+              include_directories.push_back(dir_name);
+            }
+
+            int file_name_entry_format_count = ExtractUInt8(ifs);
+            for (int i = 0; i < file_name_entry_format_count; i++)
+            {
+              dwarf_t::lnct_t content_type_code = dwarf_t::convert_lnct(ExtractULEB128(ifs));
+              dwarf_t::form_t form_code = dwarf_t::convert_form(ExtractULEB128(ifs));
+              file_entries.push_back(std::make_pair(content_type_code, form_code));
+            }
+            int file_names_count = ExtractULEB128(ifs);
+            for (int i = 0; i < file_names_count; i++)
+            {
+              std::string filename = "";
+              uint64_t dir_offset = 0;
+              __uint128_t md5 = 0;
+              uint64_t size = 0;
+              uint64_t timestamp = 0;
+              for (auto it = file_entries.begin(); it != file_entries.end(); it++)
+              {
+                std::stringstream s;
+                __uint128_t value128;
+                uint64_t value;
+                switch (it->second) {
+                  case dwarf_t::DW_FORM_string:
+                    s << ExtractString(ifs);
+                  case dwarf_t::DW_FORM_line_strp:
+                    s << ExtractStrp(arch, ifs, sections, dwarf_t::DW_SECTION_line_str);
+                    break;
+                  case dwarf_t::DW_FORM_strp:
+                    s << ExtractStrp(arch, ifs, sections, dwarf_t::DW_SECTION_str);
+                    break;
+                  // TODO supplemental string section
+                  //case dwarf_t::DW_FORM_strp_sup:
+                  //  s << "supplemental offset: " << ExtractSectionOffset(ifs, arch);
+                  //  break;
+                  case dwarf_t::DW_FORM_data1:
+                    value = ExtractUInt8(ifs);
+                    break;
+                  case dwarf_t::DW_FORM_data2:
+                    value = ExtractUInt16(ifs);
+                    break;
+                  case dwarf_t::DW_FORM_data4:
+                    value = ExtractUInt32(ifs);
+                    break;
+                  case dwarf_t::DW_FORM_data8:
+                    value = ExtractUInt64(ifs);
+                    break;
+                  case dwarf_t::DW_FORM_data16:
+                    value128 = ExtractUInt128(ifs);
+                    break;
+                  case dwarf_t::DW_FORM_udata:
+                    value = ExtractULEB128(ifs);
+                    break;
+                  default:
+                    printf("%s\n", dwarf_t::form_str(it->second).c_str());
+                    throw Exception("Unknown form", __EINFO__);
+                }
+                switch (it->first) {
+                  case dwarf_t::DW_LNCT_path:
+                    filename = s.str();
+                    //TODO
+                    break;
+                  case dwarf_t::DW_LNCT_directory_index:
+                    dir_offset = value;
+                    break;
+                  case dwarf_t::DW_LNCT_timestamp:
+                    timestamp = value;
+                    break;
+                  case dwarf_t::DW_LNCT_size:
+                    size = value;
+                    break;
+                  case dwarf_t::DW_LNCT_MD5:
+                    md5 = value128;
+                    break;
+                  default:
+                    printf("%s\n", dwarf_t::lnct_str(it->first).c_str());
+                    throw Exception("Unknown LNCT", __EINFO__);
+                }
+              }
+              auto file = LineProgramFileEntry(filename, dir_offset, timestamp, size, md5);
               file_names.push_back(file);
             }
           }
-          while (valid);
+          else
+          {
+            bool valid;
+            do
+            {
+              std::string inc_dir = ExtractString(ifs);
+              valid = inc_dir.length() > 0;
+              if (valid)
+              {
+                include_directories.push_back(inc_dir);
+              }
+            }
+            while (valid);
+            do
+            {
+              LineProgramFileEntry file(ifs);
+              valid = file.Valid();
+              if (valid)
+              {
+                file_names.push_back(file);
+              }
+            }
+            while (valid);
+          }
         }
         uint64_t LPHeaderStart() { return lp_start; }
         arch_t Arch() { return arch; }
@@ -153,6 +287,8 @@ namespace penguinTrace
         int8_t line_base;
         uint8_t line_range;
         uint8_t opcode_base;
+        uint8_t v5_address_size;
+        uint8_t v5_segment_selector_size;
         std::vector<uint8_t> standard_opcode_lengths;
         std::vector<std::string> include_directories;
         std::vector<LineProgramFileEntry> file_names;

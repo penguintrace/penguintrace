@@ -36,7 +36,11 @@ namespace penguinTrace
     {
       public:
         AbbrevAttrib(dwarf_t::at_t a, dwarf_t::form_t f)
-            : at(a), form(f)
+            : at(a), form(f), iconst(0)
+        {
+        }
+        AbbrevAttrib(dwarf_t::at_t a, dwarf_t::form_t f, int64_t c)
+            : at(a), form(f), iconst(c)
         {
         }
         dwarf_t::at_t GetAT()
@@ -47,9 +51,14 @@ namespace penguinTrace
         {
           return form;
         }
+        int64_t GetConst()
+        {
+          return iconst;
+        }
       private:
         dwarf_t::at_t at;
         dwarf_t::form_t form;
+        int64_t iconst;
     };
 
     struct AbbrevTableEntry

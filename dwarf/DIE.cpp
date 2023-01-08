@@ -75,7 +75,8 @@ namespace penguinTrace
         highPc = highPcIt.second.getInt();
       }
       else if ((highPcIt.second.form() == dwarf_t::DW_FORM_data4) ||
-               (highPcIt.second.form() == dwarf_t::DW_FORM_data8))
+               (highPcIt.second.form() == dwarf_t::DW_FORM_data8) ||
+               (highPcIt.second.form() == dwarf_t::DW_FORM_udata))
       {
         highPc = lowPc + highPcIt.second.getInt();
       }
@@ -160,6 +161,10 @@ namespace penguinTrace
       {
         return {ExtractULEB128(is), 0};
       }
+      else if (op >= dwarf_t::DW_OP_reg0 && op <= dwarf_t::DW_OP_reg31)
+      {
+        return {(op-dwarf_t::DW_OP_reg0), 0};
+      }
       else if (op == dwarf_t::DW_OP_fbreg)
       {
         return {ExtractSLEB128(is), 0};
@@ -196,10 +201,13 @@ namespace penguinTrace
       {
         return {ExtractULEB128(is), ExtractULEB128(is)};
       }
-      else if (op == dwarf_t::DW_OP_implicit_value)
+      else if (op == dwarf_t::DW_OP_call_frame_cfa)
       {
-        // TODO implicit value
-        throw Exception("DW_OP_implicit_value not supported", __EINFO__);
+        return {0, 0};
+      }
+      else
+      {
+        throw Exception(dwarf_t::op_str(op)+ "not supported", __EINFO__);
       }
       return {0, 0};
     }
@@ -539,6 +547,31 @@ namespace penguinTrace
         return it.value();
       }
       return nullptr;
+    }
+
+    DIE* DIE::getMainCu()
+    {
+      DIE* main_die = nullptr;
+      DIE* start_die = nullptr;
+      for (auto it = traverse.getChildIterator(false); !it.done(); it.next())
+      {
+        DIE* outer = it.value();
+        for (auto innerit = outer->traverse.getChildIterator(false); !innerit.done(); innerit.next())
+        {
+          DIE* d = innerit.value();
+          if (d->getTag() == dwarf_t::DW_TAG_subprogram && d->hasName()) {
+            if (d->getName() == "main") {
+              main_die = outer;
+            } else if (d->getName() == "_start") {
+              start_die = outer;
+            }
+          }
+        }
+      }
+      if (main_die != nullptr) return main_die;
+      if (start_die != nullptr) return start_die;
+      // Fallback to first child
+      return getFirstChild();
     }
 
     void DIE::addAttribute(dwarf_t::at_t at, AttrValue value)

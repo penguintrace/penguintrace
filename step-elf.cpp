@@ -74,7 +74,9 @@ int main(int argc, char **argv)
             }
           }
           first = false;
-          assert(stepper.active());
+          while (!stepper.active())
+          {
+          }
           stepper.step(penguinTrace::STEP_INSTR);
 
           if (stepper.shouldContinueToEnd() && stepper.active())

@@ -30,6 +30,9 @@ ifeq ($(USE_CAP),1)
 ifeq ($(findstring Microsoft,$(KERNEL_VERSION)), Microsoft)
 $(error "WSL does not support user_namespaces, so cannot use isolation")
 endif
+ifeq ($(findstring microsoft,$(KERNEL_VERSION)), microsoft)
+$(error "WSL does not support user_namespaces, so cannot use isolation")
+endif
 else
 	CAPSRC=capabilities/disabled
 endif
